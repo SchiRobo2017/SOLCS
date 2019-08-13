@@ -79,15 +79,23 @@ class SOM():
         s = self._neighbourhood(t)
         return np.exp(-d**2/(2*s**2))
 
-N = 4    
+N = 4
+k = 2
+bits = k + pow(2,k)
+num_teachers = 10000   
 #teachers = np.random.rand(10000, 3)
 teachers = []
-for i in range(10000):
+for i in range(num_teachers):
     teacher = []
-    for j in range(6):
+    for j in range(bits):
         teacher.append(np.random.randint(2))
     teachers.append(teacher)
 som = SOM(teachers, N=N, seed=10)
+
+som.train()
+
+m = som.nodes.reshape((N,N,bits))
+m1 = np.round(m)
 
 #fig = plt.figure()
 

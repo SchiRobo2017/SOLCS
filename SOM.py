@@ -21,8 +21,8 @@ class SOM():
         x, y = np.meshgrid(range(self.N), range(self.N)) #格子点の生成
         self.c = np.hstack((y.flatten()[:, np.newaxis],
                             x.flatten()[:, np.newaxis])) #座標の配列に変換
-        self.nodes = np.random.rand(self.N*self.N,
-                                    self.teachers.shape[1])
+        self.nodes = np.round(np.random.rand(self.N*self.N,
+                                    self.teachers.shape[1]))
         self.ims = []
 
     def train(self):
@@ -49,19 +49,26 @@ class SOM():
         return self.nodes
     
     def _distance(self, x, axis = 1): #usage: distance(a-b)
-        if axis==1:
-            if ("#" in x): #futur warining
-                # #含む距離
-                return None
-            return np.linalg.norm(x, axis=1, ord=1)
-        else:
-            return None
+        # #含む距離
+        def calc_dist(x):
+            dist = 0
+            for elm in x:
+                if elm == "#":
+                    dist += 0
+                elif elm == 0:
+                    dist += 0
+                elif abs(elm) == 1:
+                    dist += 1
+            return dist
+        
+        dist_array = []
+        for row in x:
+            dist_array.append(calc_dist(row))
+        return dist_array    
 
     def _best_matching_unit(self, teacher):
-        #compute all norms (square)
-        #norms = np.linalg.norm(self.nodes - teacher, axis=1)
         norms = self._distance(self.nodes - teacher) # #対応に向けて書き直し
-        #bmu = np.argmin(norms) #normsを1次元にreshapeしたときのインデックス
+        #bmu = index(np.argmin(norms)) #normsを1次元にreshapeしたときのインデックス
         return np.unravel_index(np.argmin(norms),(self.N, self.N)) #N*N行列のargmax
 
     def _neighbourhood(self, t):#neighbourhood radious
@@ -79,43 +86,29 @@ class SOM():
         s = self._neighbourhood(t)
         return np.exp(-d**2/(2*s**2))
 
+def generateMUXNodes(k=2, num_teachers=10000, P_sharp = 0):
+    teachers = []
+    for i in range(num_teachers):
+        teacher = []
+        for j in range(bits):
+            if np.random.rand() < P_sharp:
+                teacher.append("#")
+            else:
+                teacher.append(np.random.randint(2))
+        teachers.append(teacher)
+    return teachers
+
 N = 4
 k = 2
 bits = k + pow(2,k)
 num_teachers = 10000   
 #teachers = np.random.rand(10000, 3)
-teachers = []
-for i in range(num_teachers):
-    teacher = []
-    for j in range(bits):
-        teacher.append(np.random.randint(2))
-    teachers.append(teacher)
+teachers = generateMUXNodes()
 som = SOM(teachers, N=N, seed=10)
-
-som.train()
+#som.train()
 
 m = som.nodes.reshape((N,N,bits))
 m1 = np.round(m)
-
-#fig = plt.figure()
-
-# Initial map
-#plt.imshow(som.nodes.reshape((N, N, 3)), interpolation='none')
-#plt.show()
-
-# Train
-#som.train()
-
-# Trained MAP
-#plt.imshow(som.nodes.reshape((N, N, 3)), interpolation='none')
-#plt.show()
-
-#SOM.train作ったimsの中身をアニメーションで表示
-#ani = animation.ArtistAnimation(fig, som.ims, interval=100)
-
-#保存か表示か
-#plt.show()
-#ani.save("SOM.gif", writer="pillow")
 
 #test variables
 test = np.array([[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]])

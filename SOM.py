@@ -15,8 +15,8 @@ class SOM():
         self.teachers = np.array(teachers)
         self.n_teacher = self.teachers.shape[0]
         self.N = N
-        if not seed is None:
-            np.random.seed(seed)
+        #if not seed is None:
+        #    np.random.seed(seed)
 
         x, y = np.meshgrid(range(self.N), range(self.N)) #格子点の生成
         self.c = np.hstack((y.flatten()[:, np.newaxis],
@@ -96,6 +96,7 @@ class SOM():
 
 def generateMUXNodes(k=2, num_teachers=10000, seed = None, P_sharp = 0):
     teachers = []
+    bits = k + pow(2,k)
     for i in range(num_teachers):
         teacher = []
         for j in range(bits):
@@ -161,14 +162,15 @@ def getColoredNodes(nodes, k=2, scale="k-scale", color="gray"):
     coloredNodes = np.array(coloredNodes, dtype = np.uint8)
     return coloredNodes.reshape(N, N)
 
-#seed = 10
+seed = 10
 N = 100
 k = 2
 bits = k + pow(2,k)
-num_teachers = 10000   
+num_teachers = 10000 #default=10000 収束する   
 #teachers = np.random.rand(10000, 3)
 teachers = generateMUXNodes()
-som = SOM(teachers, N=N, seed=10)
+np.random.seed(seed)
+som = SOM(teachers, N=N, seed=seed)
 
 m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
 m1 = np.round(m)
@@ -177,9 +179,11 @@ iniNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
 iniAnsNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
 
 
+"""
 plt.figure()
 plt.imshow(iniAnsNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
 plt.title("initial map of actions")
+"""
 
 """
 plt.figure()
@@ -187,10 +191,11 @@ plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
 plt.title("initial map of condition by 64 gray scale")
 """
 
+"""
 plt.figure()
 plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
 plt.title("initial map colored by address bit")
-
+"""
 
 print("traing has started.")
 som.train()
@@ -208,7 +213,7 @@ plt.title("map of condition part after leaning")
 
 plt.figure()
 plt.imshow(afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
-plt.title("map of rounded condition part after learning by 64 gray scale")
+plt.title("map of rounded action part after learning")
 
 plt.figure()
 plt.imshow(afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")

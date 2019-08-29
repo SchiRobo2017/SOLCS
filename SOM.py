@@ -124,11 +124,20 @@ def getAnsNodes(nodes, k=2):
     ansNodes = np.array(ansNodes)
     return ansNodes.reshape(nodes.shape[0], nodes.shape[1], 1)
 
-def getGrayNodes(nodes, k=2):
+def getGrayNodes(nodes, k=2, scale="k-scale"):
     Max = k + k**2
     grayNodes = []
-    for cl in nodes:        
-        grayNodes.append(np.sum(cl)/Max)
+    if scale == "k-scale":
+        for cl in nodes:        
+            grayNodes.append(np.sum(cl)/Max)
+    elif scale=="63":
+        for cl in nodes:
+            cljoined = [str(int(i)) for i in cl]
+            cljoined = int("".join(cljoined),2)
+            grayNodes.append(cljoined)
+    else:
+        raise ValueError("scaleに渡す引数が間違ってるよ")
+
     grayNodes = np.array(grayNodes)
     return grayNodes.reshape(N, N)
 
@@ -142,31 +151,33 @@ som = SOM(teachers, N=N, seed=10)
 
 m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
 m1 = np.round(m)
-iniNodes = getGrayNodes(som.nodes)
+iniNodes = getGrayNodes(som.nodes, scale="63")
 iniAnsNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
 
-#plt.figure()
-#plt.imshow(iniAnsNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
-#plt.title("initial rounded")
+plt.figure()
+plt.imshow(iniAnsNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
+plt.title("initial map of actions")
 
 plt.figure()
-plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
-plt.title("initial condition part gray map")
+plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
+plt.title("initial map of condition by 64 gray scale")
 
 
+print("traing has started.")
 som.train()
+print("training has finished.")
 
 
-#ansNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
-#plt.figure()
-#plt.imshow(ansNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
-#plt.title("after leaning")
-
-afterNodes = getGrayNodes(np.round(som.nodes))
-#afterNodes = getGrayNodes(som.nodes)
+ansNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
 plt.figure()
-plt.imshow(afterNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
-plt.title("condition part gray map of after learning ")
+plt.imshow(ansNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
+plt.title("map of condition part after leaning")
+
+afterNodes = getGrayNodes(np.round(som.nodes), scale="63") #丸めると不思議な模様が！
+#afterNodes = getGrayNodes(som.nodes, scale="63")
+plt.figure()
+plt.imshow(afterNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
+plt.title("map of rounded condition part after learning by 64 gray scale")
 
 plt.show()
 

@@ -28,14 +28,14 @@ class SOM():
     def train(self):
         for i, teacher in enumerate(self.teachers):
             bmu = self._best_matching_unit(teacher)
-            #d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuの距離
-            d = self._distance(self.c - bmu)
+            d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuの距離
+            #d = self._distance(self.c - bmu)
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
             self.nodes += L * S[:, np.newaxis] * (teacher - self.nodes) #これを離散化する必要
             
             #進捗表示
-            print("training iteration : "+ str(i)) 
+            #print("training iteration : "+ str(i)) 
             
             #適当なインターバルで現在の学習状態をimsに格納
             """
@@ -59,17 +59,25 @@ class SOM():
                     dist += 0
                 elif abs(elm) == 1:
                     dist += 1
-            return dist
-        
+            return dist 
+        print(calc_dist(x))
+        return calc_dist(x)
+        """
         dist_array = []
+        
         for row in x:
             dist_array.append(calc_dist(row))
-        return dist_array    
-
+        
+        dist_array = np.array(dist_array)
+        return dist_array.reshape(self.N, self.N, 1)
+        """
+        
     def _best_matching_unit(self, teacher):
-        norms = self._distance(self.nodes - teacher) # #対応に向けて書き直し
-        #bmu = index(np.argmin(norms)) #normsを1次元にreshapeしたときのインデックス
-        return np.unravel_index(np.argmin(norms),(self.N, self.N)) #N*N行列のargmax
+        norms = np.linalg.norm(self.nodes - teacher, axis=1)
+        #norms = self._distance(self.nodes - teacher)
+        #print(np.argmin(norms))
+        bmu = np.argmin(norms) #normsを1次元にreshapeしたときのインデックス
+        return np.unravel_index(bmu,(self.N, self.N)) #N*N行列のargmin
 
     def _neighbourhood(self, t):#neighbourhood radious
         halflife = float(self.n_teacher/4) #for testing
@@ -98,17 +106,70 @@ def generateMUXNodes(k=2, num_teachers=10000, P_sharp = 0):
         teachers.append(teacher)
     return teachers
 
-N = 4
+def getAnsNodes(nodes, k=2):
+    ansNodes = []
+    for row in nodes:
+        for elm in row:
+            addbit = elm[0:k]
+            refbit = elm[k:]
+            cal = ""
+            #正解行動
+            for x in range(len(addbit)):
+                #cal += str(int(addbit[x]))
+                cal += str(int(addbit[x]))
+            cal = int(cal,2)
+            ans = refbit[cal]
+            ansNodes.append(ans)
+            
+    ansNodes = np.array(ansNodes)
+    return ansNodes.reshape(nodes.shape[0], nodes.shape[1], 1)
+
+def getGrayNodes(nodes, k=2):
+    Max = k + k**2
+    grayNodes = []
+    for cl in nodes:        
+        grayNodes.append(np.sum(cl)/Max)
+    grayNodes = np.array(grayNodes)
+    return grayNodes.reshape(N, N)
+
+N = 100
 k = 2
 bits = k + pow(2,k)
 num_teachers = 10000   
 #teachers = np.random.rand(10000, 3)
 teachers = generateMUXNodes()
 som = SOM(teachers, N=N, seed=10)
-#som.train()
 
-m = som.nodes.reshape((N,N,bits))
+m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
 m1 = np.round(m)
+iniNodes = getGrayNodes(som.nodes)
+iniAnsNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
+
+#plt.figure()
+#plt.imshow(iniAnsNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
+#plt.title("initial rounded")
+
+plt.figure()
+plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
+plt.title("initial condition part gray map")
+
+
+som.train()
+
+
+#ansNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
+#plt.figure()
+#plt.imshow(ansNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
+#plt.title("after leaning")
+
+afterNodes = getGrayNodes(np.round(som.nodes))
+#afterNodes = getGrayNodes(som.nodes)
+plt.figure()
+plt.imshow(afterNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
+plt.title("condition part gray map of after learning ")
+
+plt.show()
+
 
 #test variables
 test = np.array([[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]])

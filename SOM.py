@@ -94,7 +94,7 @@ class SOM():
         s = self._neighbourhood(t)
         return np.exp(-d**2/(2*s**2))
 
-def generateMUXNodes(k=2, num_teachers=10000, P_sharp = 0):
+def generateMUXNodes(k=2, num_teachers=10000, seed = None, P_sharp = 0):
     teachers = []
     for i in range(num_teachers):
         teacher = []
@@ -124,23 +124,44 @@ def getAnsNodes(nodes, k=2):
     ansNodes = np.array(ansNodes)
     return ansNodes.reshape(nodes.shape[0], nodes.shape[1], 1)
 
-def getGrayNodes(nodes, k=2, scale="k-scale"):
+def getColoredNodes(nodes, k=2, scale="k-scale", color="gray"):
     Max = k + k**2
-    grayNodes = []
+    coloredNodes = []
+    if color=="colored":
+        for cl in nodes:
+            #addBitsArray = cl[:k].astype(int)
+            addBitsArray = cl[:k]
+            addBits = [str(int(i)) for i in addBitsArray]
+            addBits = "".join(addBits)
+            if addBits=="00": #白
+                coloredNodes.append([0,0,0])
+            elif addBits=="01": #R
+                coloredNodes.append([255,0,0])
+            elif addBits=="10": #G
+                coloredNodes.append([0,255,0])
+            elif addBits=="11": #B
+                coloredNodes.append([0,0,255])
+
+        coloredNodes = np.array(coloredNodes, dtype = np.uint8)
+        return coloredNodes.reshape(N, N, 3)
+        
     if scale == "k-scale":
         for cl in nodes:        
-            grayNodes.append(np.sum(cl)/Max)
+            coloredNodes.append(np.sum(cl)/Max)
     elif scale=="63":
         for cl in nodes:
             cljoined = [str(int(i)) for i in cl]
-            cljoined = int("".join(cljoined),2)
-            grayNodes.append(cljoined)
+            cljoined = "".join(cljoined)
+            clIntScale = int(cljoined,2)
+            coloredNodes.append(clIntScale)
+            #coloredNodes.append(int("".join([str(int(i)) for i in cl]))) #一行で書けばこう
     else:
         raise ValueError("scaleに渡す引数が間違ってるよ")
 
-    grayNodes = np.array(grayNodes)
-    return grayNodes.reshape(N, N)
+    coloredNodes = np.array(coloredNodes, dtype = np.uint8)
+    return coloredNodes.reshape(N, N)
 
+#seed = 10
 N = 100
 k = 2
 bits = k + pow(2,k)
@@ -151,16 +172,24 @@ som = SOM(teachers, N=N, seed=10)
 
 m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
 m1 = np.round(m)
-iniNodes = getGrayNodes(som.nodes, scale="63")
+iniNodes = getColoredNodes(som.nodes, scale="63")
+iniNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
 iniAnsNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
+
 
 plt.figure()
 plt.imshow(iniAnsNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
 plt.title("initial map of actions")
 
+"""
 plt.figure()
 plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
 plt.title("initial map of condition by 64 gray scale")
+"""
+
+plt.figure()
+plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
+plt.title("initial map colored by address bit")
 
 
 print("traing has started.")
@@ -169,15 +198,21 @@ print("training has finished.")
 
 
 ansNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
+afterNodes = getColoredNodes(som.nodes, scale="63")
+afterNodesRounded = getColoredNodes(np.round(som.nodes), scale="63") #丸めると不思議な模様が！
+afterNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
+
 plt.figure()
 plt.imshow(ansNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
 plt.title("map of condition part after leaning")
 
-afterNodes = getGrayNodes(np.round(som.nodes), scale="63") #丸めると不思議な模様が！
-#afterNodes = getGrayNodes(som.nodes, scale="63")
 plt.figure()
-plt.imshow(afterNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
+plt.imshow(afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
 plt.title("map of rounded condition part after learning by 64 gray scale")
+
+plt.figure()
+plt.imshow(afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
+plt.title("map after learning coloerd by address bit")
 
 plt.show()
 

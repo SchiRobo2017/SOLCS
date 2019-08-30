@@ -35,20 +35,7 @@ class SOM():
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
             self.nodes += L * S[:, np.newaxis] * (teacher - self.nodes) #これを離散化する必要
-            
-            #進捗表示
-            #print("training iteration : "+ str(i)) 
-            
-            #適当なインターバルで現在の学習状態をimsに格納
-            """
-            if i%30 == 0:
-                im = plt.imshow(self.nodes.reshape((N, N, 3)), interpolation='none')
-                self.ims.append([im])
-            """
-            
-            #plt.cla()
-            #plt.imshow(self.nodes.reshape((N, N, 3)))
-            
+                        
         print("training has finished")
         return self.nodes
     
@@ -66,15 +53,6 @@ class SOM():
             return dist 
         print(calc_dist(x))
         return calc_dist(x)
-        """
-        dist_array = []
-        
-        for row in x:
-            dist_array.append(calc_dist(row))
-        
-        dist_array = np.array(dist_array)
-        return dist_array.reshape(self.N, self.N, 1)
-        """
         
     def _best_matching_unit(self, teacher):
         norms = np.linalg.norm(self.nodes - teacher, axis=1)
@@ -149,7 +127,7 @@ def getAnsNodes(nodes, k=2):
     ansNodes = np.array(ansNodes)
     return ansNodes.reshape(nodes.shape[0], nodes.shape[1], 1)
 
-def getColoredNodes(nodes, k=2, scale="bits-scale", color="gray", head = None):
+def getColoredNodes(nodes, k=2, color="gray"):
     Max = k + k**2
     coloredNodes = []
     if color=="colored":
@@ -216,8 +194,7 @@ plt.imshow(iniAnsNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
 plt.title("initial map of actions")
 
 """
-plt.figure(),k)
-num_teachers = 1
+plt.figure()
 plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
 plt.title("initial map of condition by 64 gray scale")
 """

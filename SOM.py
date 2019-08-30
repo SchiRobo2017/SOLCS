@@ -7,7 +7,7 @@ Created on Wed Jul 24 15:36:50 2019
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+#import matplotlib.animation as animation
 
 class SOM():
 
@@ -26,6 +26,8 @@ class SOM():
         self.ims = []
 
     def train(self):
+        print("training has started.")
+        
         for i, teacher in enumerate(self.teachers):
             bmu = self._best_matching_unit(teacher)
             d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuの距離
@@ -46,6 +48,8 @@ class SOM():
             
             #plt.cla()
             #plt.imshow(self.nodes.reshape((N, N, 3)))
+            
+        print("training has finished")
         return self.nodes
     
     def _distance(self, x, axis = 1): #usage: distance(a-b)
@@ -94,25 +98,45 @@ class SOM():
         s = self._neighbourhood(t)
         return np.exp(-d**2/(2*s**2))
 
-def generateMUXNodes(k=2, num_teachers=10000, seed = None, P_sharp = 0):
+def generateMUXNodes(k=2, num_teachers=10000, seed = None, P_sharp = 0, includeAns = False):
     teachers = []
-    bits = k + pow(2,k)
+    #bits = k + 2**k
     for i in range(num_teachers):
         teacher = []
+        
+        #問題を生成
         for j in range(bits):
             if np.random.rand() < P_sharp:
                 teacher.append("#")
             else:
                 teacher.append(np.random.randint(2))
+                
+        #必要なら答えを付与
+        if includeAns == True:
+            teacher.append(getAns(teacher, k))
+
         teachers.append(teacher)
     return teachers
 
+def getAns(bitArray, k=2):
+    addbit = bitArray[0:k]
+    refbit = bitArray[k:]
+    cal = ""
+    #正解行動
+    for x in range(len(addbit)):
+        #cal += str(int(addbit[x]))
+        cal += str(int(addbit[x]))
+    cal = int(cal,2)
+    ans = refbit[cal]
+    return ans
+
+#act含む/含まない両方対応
 def getAnsNodes(nodes, k=2):
     ansNodes = []
     for row in nodes:
         for elm in row:
             addbit = elm[0:k]
-            refbit = elm[k:]
+            refbit = elm[k:k+k**2]
             cal = ""
             #正解行動
             for x in range(len(addbit)):
@@ -125,7 +149,7 @@ def getAnsNodes(nodes, k=2):
     ansNodes = np.array(ansNodes)
     return ansNodes.reshape(nodes.shape[0], nodes.shape[1], 1)
 
-def getColoredNodes(nodes, k=2, scale="k-scale", color="gray"):
+def getColoredNodes(nodes, k=2, scale="bits-scale", color="gray", head = None):
     Max = k + k**2
     coloredNodes = []
     if color=="colored":
@@ -145,48 +169,55 @@ def getColoredNodes(nodes, k=2, scale="k-scale", color="gray"):
 
         coloredNodes = np.array(coloredNodes, dtype = np.uint8)
         return coloredNodes.reshape(N, N, 3)
-        
-    if scale == "k-scale":
+    
+    elif color == "bits-scale":
         for cl in nodes:        
             coloredNodes.append(np.sum(cl)/Max)
-    elif scale=="63":
+            
+        coloredNodes = np.array(coloredNodes, dtype = np.uint8)
+        return coloredNodes.reshape(N, N)
+    elif color == "bits2decimal-scale":
         for cl in nodes:
             cljoined = [str(int(i)) for i in cl]
+            cljoined = cljoined[:k+k**2] #act bitを除外
             cljoined = "".join(cljoined)
             clIntScale = int(cljoined,2)
             coloredNodes.append(clIntScale)
             #coloredNodes.append(int("".join([str(int(i)) for i in cl]))) #一行で書けばこう
+            
+        coloredNodes = np.array(coloredNodes, dtype = np.uint8)
+        return coloredNodes.reshape(N, N)
     else:
-        raise ValueError("scaleに渡す引数が間違ってるよ")
+        raise ValueError("colorに渡す引数が間違ってるよ")
 
-    coloredNodes = np.array(coloredNodes, dtype = np.uint8)
-    return coloredNodes.reshape(N, N)
+    raise ValueError("colorに渡す引数が間違ってるよ")
 
 seed = 10
 N = 100
 k = 2
-bits = k + pow(2,k)
+includeAns = True
+bits = k + 2**k
+if includeAns==True:
+    bits+=1
 num_teachers = 10000 #default=10000 収束する   
 #teachers = np.random.rand(10000, 3)
-teachers = generateMUXNodes()
+teachers = generateMUXNodes(includeAns)
 np.random.seed(seed)
 som = SOM(teachers, N=N, seed=seed)
 
 m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
 m1 = np.round(m)
-iniNodes = getColoredNodes(som.nodes, scale="63")
+iniNodes = getColoredNodes(som.nodes, color="bits2decimal-scale")
 iniNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
 iniAnsNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
 
-
-"""
 plt.figure()
 plt.imshow(iniAnsNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
 plt.title("initial map of actions")
-"""
 
 """
-plt.figure()
+plt.figure(),k)
+num_teachers = 1
 plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
 plt.title("initial map of condition by 64 gray scale")
 """
@@ -197,23 +228,20 @@ plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
 plt.title("initial map colored by address bit")
 """
 
-print("traing has started.")
 som.train()
-print("training has finished.")
-
 
 ansNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
-afterNodes = getColoredNodes(som.nodes, scale="63")
-afterNodesRounded = getColoredNodes(np.round(som.nodes), scale="63") #丸めると不思議な模様が！
+afterNodes = getColoredNodes(som.nodes, color="bits2decimal-scale")
+afterNodesRounded = getColoredNodes(np.round(som.nodes), color="bits2decimal-scale") #丸めると不思議な模様が！
 afterNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
 
 plt.figure()
 plt.imshow(ansNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
-plt.title("map of condition part after leaning")
+plt.title("map of action part after leaning")
 
 plt.figure()
 plt.imshow(afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
-plt.title("map of rounded action part after learning")
+plt.title("map of rounded condition part after learning")
 
 plt.figure()
 plt.imshow(afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")

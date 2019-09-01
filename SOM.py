@@ -11,10 +11,12 @@ import matplotlib.pyplot as plt
 
 class SOM():
 
-    def __init__(self, teachers, N, seed=None):
+    def __init__(self, teachers, head, N, seed=None):
         self.teachers = np.array(teachers)
         self.n_teacher = self.teachers.shape[0]
+        self.head = head
         self.N = N
+        
         #if not seed is None:
         #    np.random.seed(seed)
 
@@ -27,15 +29,17 @@ class SOM():
 
     def train(self):
         print("training has started.")
-        
+
         for i, teacher in enumerate(self.teachers):
-            bmu = self._best_matching_unit(teacher)
+            bmu = self._best_matching_unit(teacher[:self.head])
             d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuの距離
-            #d = self._distance(self.c - bmu)
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
-            self.nodes += L * S[:, np.newaxis] * (teacher - self.nodes) #これを離散化する必要
-                        
+            self.nodes = self.nodes + L * S[:, np.newaxis] * (teacher - self.nodes)
+            
+            if i%(len(self.teachers)/100*10)==0:
+                print("progress : " + str(i/len(self.teachers)*100) + "%")
+
         print("training has finished")
         return self.nodes
     
@@ -55,9 +59,7 @@ class SOM():
         return calc_dist(x)
         
     def _best_matching_unit(self, teacher):
-        norms = np.linalg.norm(self.nodes - teacher, axis=1)
-        #norms = self._distance(self.nodes - teacher)
-        #print(np.argmin(norms))
+        norms = np.linalg.norm(self.nodes[:, :self.head] - teacher[:self.head], axis=1)
         bmu = np.argmin(norms) #normsを1次元にreshapeしたときのインデックス
         return np.unravel_index(bmu,(self.N, self.N)) #N*N行列のargmin
 
@@ -76,9 +78,9 @@ class SOM():
         s = self._neighbourhood(t)
         return np.exp(-d**2/(2*s**2))
 
-def generateMUXNodes(k=2, num_teachers=10000, seed = None, P_sharp = 0, includeAns = False):
+def generateMUXNodes(num_teachers, k=2, P_sharp = 0, includeAns = False):
     teachers = []
-    #bits = k + 2**k
+    bits = k + 2**k
     for i in range(num_teachers):
         teacher = []
         
@@ -178,10 +180,10 @@ bits = k + 2**k
 if includeAns==True:
     bits+=1
 num_teachers = 10000 #default=10000 収束する   
-#teachers = np.random.rand(10000, 3)
-teachers = generateMUXNodes(includeAns)
 np.random.seed(seed)
-som = SOM(teachers, N=N, seed=seed)
+teachers = generateMUXNodes(k=2, includeAns=includeAns, num_teachers=num_teachers)
+#np.random.seed(seed)
+som = SOM(teachers, head=3, N=N)
 
 m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
 m1 = np.round(m)

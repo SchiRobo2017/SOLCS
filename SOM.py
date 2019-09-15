@@ -7,19 +7,15 @@ Created on Wed Jul 24 15:36:50 2019
 
 import numpy as np
 import matplotlib.pyplot as plt
-#import matplotlib.animation as animation
 
 class SOM():
 
-    def __init__(self, teachers, head, N, seed=None):
+    def __init__(self, teachers, head, N):
         self.teachers = np.array(teachers)
         self.n_teacher = self.teachers.shape[0]
         self.head = head
         self.N = N
         
-        #if not seed is None:
-        #    np.random.seed(seed)
-
         x, y = np.meshgrid(range(self.N), range(self.N)) #格子点の生成
         self.c = np.hstack((y.flatten()[:, np.newaxis],
                             x.flatten()[:, np.newaxis])) #座標の配列に変換
@@ -31,11 +27,16 @@ class SOM():
         print("training has started.")
 
         for i, teacher in enumerate(self.teachers):
-            bmu = self._best_matching_unit(teacher[:self.head])
-            d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuの距離
+            if not(self.head == None):
+                idx = list(range(self.head)) + [-1]
+                bmu = self._best_matching_unit(teacher[idx])
+            else:
+                bmu = self._best_matching_unit(teacher[:self.head])
+            d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuのmap上での距離
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
-            self.nodes = self.nodes + L * S[:, np.newaxis] * (teacher - self.nodes)
+            teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ学習させる場合
+            self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
             
             if i%(len(self.teachers)/100*10)==0:
                 print("progress : " + str(i/len(self.teachers)*100) + "%")
@@ -59,7 +60,23 @@ class SOM():
         return calc_dist(x)
         
     def _best_matching_unit(self, teacher):
-        norms = np.linalg.norm(self.nodes[:, :self.head] - teacher[:self.head], axis=1)
+        """
+        if not(self.head == None):
+            idx = list(range(self.head)) + [-1]
+            nodes = self.nodes[:,idx]
+            teacher = teacher[idx]
+            norms = np.linalg.norm(nodes - teacher, axis=1)
+        else:
+            norms = np.linalg.norm(self.nodes[:, :self.head] - teacher[:self.head], axis=1)
+        """
+        if self.head == None:
+            norms = np.linalg.norm(self.nodes[:, :self.head] - teacher[:self.head], axis=1)
+        else: #self.head != None
+            idx = list(range(self.head)) + [-1]
+            nodes = self.nodes[:,idx]
+            teacher = teacher[idx]
+            norms = np.linalg.norm(nodes - teacher, axis=1)
+
         bmu = np.argmin(norms) #normsを1次元にreshapeしたときのインデックス
         return np.unravel_index(bmu,(self.N, self.N)) #N*N行列のargmin
 
@@ -161,11 +178,12 @@ def getColoredNodes(nodes, k=2, color="gray"):
             cljoined = [str(int(i)) for i in cl]
             cljoined = cljoined[:k+k**2] #act bitを除外
             cljoined = "".join(cljoined)
-            clIntScale = int(cljoined,2)
+            clIntScale = int(cljoined,2) #2進数の2
             coloredNodes.append(clIntScale)
             #coloredNodes.append(int("".join([str(int(i)) for i in cl]))) #一行で書けばこう
             
-        coloredNodes = np.array(coloredNodes, dtype = np.uint8)
+        #coloredNodes = np.array(coloredNodes, dtype = np.uint8)
+        coloredNodes = np.array(coloredNodes)
         return coloredNodes.reshape(N, N)
     else:
         raise ValueError("colorに渡す引数が間違ってるよ")
@@ -173,6 +191,7 @@ def getColoredNodes(nodes, k=2, color="gray"):
     raise ValueError("colorに渡す引数が間違ってるよ")
 
 seed = 10
+#seed = None
 N = 100
 k = 2
 includeAns = True
@@ -180,9 +199,11 @@ bits = k + 2**k
 if includeAns==True:
     bits+=1
 num_teachers = 10000 #default=10000 収束する   
+
 np.random.seed(seed)
-teachers = generateMUXNodes(k=2, includeAns=includeAns, num_teachers=num_teachers)
-#np.random.seed(seed)
+
+teachers = generateMUXNodes(k=2, includeAns=includeAns,
+                            num_teachers=num_teachers)
 som = SOM(teachers, head=3, N=N)
 
 m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
@@ -195,23 +216,20 @@ plt.figure()
 plt.imshow(iniAnsNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
 plt.title("initial map of actions")
 
-"""
 plt.figure()
-plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
-plt.title("initial map of condition by 64 gray scale")
-"""
+plt.imshow(iniNodes, cmap="Blues", vmin=0, vmax=63, interpolation="none")
+plt.title("initial map of condition by 64 scale")
 
-"""
 plt.figure()
 plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
 plt.title("initial map colored by address bit")
-"""
 
 som.train()
 
 ansNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
-afterNodes = getColoredNodes(som.nodes, color="bits2decimal-scale")
-afterNodesRounded = getColoredNodes(np.round(som.nodes), color="bits2decimal-scale") #丸めると不思議な模様が！
+afterNodesRounded = getColoredNodes(np.round(som.nodes),
+                                    color="bits2decimal-scale") #丸めると不思議な模様が！
+afterNodesSeparated = afterNodesRounded.copy()
 afterNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
 
 plt.figure()
@@ -219,8 +237,23 @@ plt.imshow(ansNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
 plt.title("map of action part after leaning")
 
 plt.figure()
-plt.imshow(afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
-plt.title("map of rounded condition part after learning")
+plt.imshow(afterNodesRounded, cmap="Blues", vmin=0, vmax=63, interpolation="none")
+plt.title("map of condition part after learning")
+plt.colorbar()
+
+for i, row in enumerate(ansNodes):
+    for j, ans in enumerate(row):
+        if ans == 1.0:
+            None
+        elif ans == 0.0:
+            val = afterNodesSeparated[i,j]
+            print(-val)
+            afterNodesSeparated[i,j] = -val
+            
+plt.figure()
+plt.imshow(afterNodesSeparated, cmap="seismic", vmin=-64, vmax=63, interpolation="none")
+plt.title("map of condition part separated by action")
+plt.colorbar()
 
 plt.figure()
 plt.imshow(afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")

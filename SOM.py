@@ -191,7 +191,6 @@ def getColoredNodes(nodes, k=2, color="gray"):
     raise ValueError("colorに渡す引数が間違ってるよ")
 
 seed = 10
-#seed = None
 N = 100
 k = 2
 includeAns = True
@@ -199,7 +198,7 @@ bits = k + 2**k
 if includeAns==True:
     bits+=1
 num_teachers = 10000 #default=10000 収束する   
-
+    
 np.random.seed(seed)
 
 teachers = generateMUXNodes(k=2, includeAns=includeAns,
@@ -208,61 +207,75 @@ som = SOM(teachers, head=3, N=N)
 
 m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
 m1 = np.round(m)
-iniNodes = getColoredNodes(som.nodes, color="bits2decimal-scale")
-iniNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
-iniAnsNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
+iniNodes = getColoredNodes(som.nodes,
+                           color="bits2decimal-scale")
+iniNodesColored = getColoredNodes(np.round(som.nodes),
+                                  color="colored")
+iniCorrectActNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
 
-plt.figure()
-plt.imshow(iniAnsNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
-plt.title("initial map of actions")
+#plt.figure()
+#plt.imshow(iniCorrectActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
+#plt.title("initial map of actions")
+#plt.savefig("exp_data\\seed" + str(seed) + "\\initial map of actions.png")
 
-plt.figure()
-plt.imshow(iniNodes, cmap="Blues", vmin=0, vmax=63, interpolation="none")
-plt.title("initial map of condition by 64 scale")
+#plt.figure()
+#plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
+#plt.title("initial map of condition by 64 scale")
+#plt.savefig("exp_data\\seed" + str(seed) + "\\initial map of condition by 64 scale")
 
-plt.figure()
-plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
-plt.title("initial map colored by address bit")
+#plt.figure()
+#plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
+#plt.title("initial map colored by address bit")
+#plt.savefig("exp_data\\seed" + str(seed) + "\\initial map colored by address bit")
 
 som.train()
 
-ansNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
+#actNodes = np.round(som.nodes[:,-1].reshape(N, N))
+actNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
+correctActNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
 afterNodesRounded = getColoredNodes(np.round(som.nodes),
                                     color="bits2decimal-scale") #丸めると不思議な模様が！
 afterNodesSeparated = afterNodesRounded.copy()
 afterNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
 
 plt.figure()
-plt.imshow(ansNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
+plt.imshow(actNodes, cmap="gray", vmin=0, vmax=1,
+           interpolation="none")
 plt.title("map of action part after leaning")
+plt.savefig("exp_data\\seed" + str(seed) + 
+            "\\map of action part after leaning")
+
+plt.figure()
+plt.imshow(correctActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
+plt.title("map of correct action part after leaning")
+plt.savefig("exp_data\\seed" + str(seed) +
+            "\\map of correct action part after leaning")
 
 plt.figure()
 plt.imshow(afterNodesRounded, cmap="Blues", vmin=0, vmax=63, interpolation="none")
 plt.title("map of condition part after learning")
 plt.colorbar()
+plt.savefig("exp_data\\seed" + str(seed) + "\\map of condition part after learning")
 
-for i, row in enumerate(ansNodes):
+for i, row in enumerate(actNodes):
     for j, ans in enumerate(row):
         if ans == 1.0:
             None
         elif ans == 0.0:
             val = afterNodesSeparated[i,j]
-            print(-val)
             afterNodesSeparated[i,j] = -val
             
 plt.figure()
 plt.imshow(afterNodesSeparated, cmap="seismic", vmin=-64, vmax=63, interpolation="none")
 plt.title("map of condition part separated by action")
 plt.colorbar()
+plt.savefig("exp_data\\seed" + str(seed) + "\\map of condition part separated by action")
 
 plt.figure()
 plt.imshow(afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
 plt.title("map after learning coloerd by address bit")
+plt.savefig("exp_data\\seed" + str(seed) + "\\map after learning coloerd by address bit")    
 
 plt.show()
-
-
-#test variables
-test = np.array([[0,0,0],[0,0,1],[0,1,0],[0,1,1],[1,0,0],[1,0,1],[1,1,0],[1,1,1]])
 
 print("end of program")

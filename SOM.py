@@ -35,7 +35,7 @@ class SOM():
             d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuのmap上での距離
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
-            teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ学習させる場合
+            #teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ学習させる場合
             self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
             
             if i%(len(self.teachers)/100*10)==0:
@@ -230,8 +230,7 @@ iniCorrectActNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
 
 som.train()
 
-#actNodes = np.round(som.nodes[:,-1].reshape(N, N))
-actNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
+actNodes = np.round(som.nodes[:,-1].reshape(N, N))
 correctActNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
 afterNodesRounded = getColoredNodes(np.round(som.nodes),
                                     color="bits2decimal-scale") #丸めると不思議な模様が！
@@ -252,12 +251,12 @@ plt.savefig("exp_data\\seed" + str(seed) +
             "\\map of correct action part after leaning")
 
 plt.figure()
-plt.imshow(afterNodesRounded, cmap="Blues", vmin=0, vmax=63, interpolation="none")
+plt.imshow(afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
 plt.title("map of condition part after learning")
 plt.colorbar()
 plt.savefig("exp_data\\seed" + str(seed) + "\\map of condition part after learning")
 
-for i, row in enumerate(actNodes):
+for i, row in enumerate(correctActNodes):
     for j, ans in enumerate(row):
         if ans == 1.0:
             None
@@ -277,5 +276,19 @@ plt.title("map after learning coloerd by address bit")
 plt.savefig("exp_data\\seed" + str(seed) + "\\map after learning coloerd by address bit")    
 
 plt.show()
+
+black00_0 = np.round(som.nodes).reshape(100,100,7)[40:50,85:95,:]
+black00_1 = np.round(som.nodes).reshape(100,100,7)[0:10,0:10,:]
+
+red01_0 = np.round(som.nodes).reshape(100,100,7)[0:10,50:60,:]
+red01_1 = np.round(som.nodes).reshape(100,100,7)[0:10,30:40,:]
+
+green10_1 = np.round(som.nodes).reshape(100,100,7)[40:50,30:40,:]
+green10_0 = np.round(som.nodes).reshape(100,100,7)[40:50,30:40,:]
+
+blue11_0 = np.round(som.nodes).reshape(100,100,7)[70:80,90:99,:]
+blue11_1 = np.round(som.nodes).reshape(100,100,7)[89:99,30:40,:]
+
+#np.unique(black00_0.reshape(100,7),axis=0)
 
 print("end of program")

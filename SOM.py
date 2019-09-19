@@ -155,7 +155,7 @@ def getColoredNodes(nodes, k=2, color="gray"):
             addBitsArray = cl[:k]
             addBits = [str(int(i)) for i in addBitsArray]
             addBits = "".join(addBits)
-            if addBits=="00": #白
+            if addBits=="00": #黒
                 coloredNodes.append([0,0,0])
             elif addBits=="01": #R
                 coloredNodes.append([255,0,0])
@@ -230,12 +230,24 @@ iniCorrectActNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
 
 som.train()
 
-actNodes = np.round(som.nodes[:,-1].reshape(N, N))
+actNodesR = som.nodes[:,-1].reshape(N, N)
+actNodes = np.round(actNodesR)
 correctActNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
 afterNodesRounded = getColoredNodes(np.round(som.nodes),
-                                    color="bits2decimal-scale") #丸めると不思議な模様が！
+                                    color="bits2decimal-scale")
+afterNodesReverse = np.round(som.nodes)[:,0:-1]
+afterNodesReverse = getColoredNodes(afterNodesReverse[:,::-1], color="bits2decimal-scale")
 afterNodesSeparated = afterNodesRounded.copy()
 afterNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
+
+"""
+plt.figure()
+plt.imshow(actNodesR, cmap="gray", vmin=0, vmax=1,
+           interpolation="none")
+plt.title("map of action part after leaning(continuous value)")
+plt.savefig("exp_data\\seed" + str(seed) + 
+            "\\map of action part after leaning(countinuous value)")
+"""
 
 plt.figure()
 plt.imshow(actNodes, cmap="gray", vmin=0, vmax=1,
@@ -256,6 +268,12 @@ plt.title("map of condition part after learning")
 plt.colorbar()
 plt.savefig("exp_data\\seed" + str(seed) + "\\map of condition part after learning")
 
+plt.figure()
+plt.imshow(afterNodesReverse , cmap="gray", vmin=0, vmax=63, interpolation="none")
+plt.title("map of condition part after learning(reversed value)")
+plt.colorbar()
+plt.savefig("exp_data\\seed" + str(seed) + "\\map of condition part after learning(reversed value)")
+
 for i, row in enumerate(correctActNodes):
     for j, ans in enumerate(row):
         if ans == 1.0:
@@ -265,7 +283,7 @@ for i, row in enumerate(correctActNodes):
             afterNodesSeparated[i,j] = -val
             
 plt.figure()
-plt.imshow(afterNodesSeparated, cmap="seismic", vmin=-64, vmax=63, interpolation="none")
+plt.imshow(afterNodesSeparated, cmap="PuOr", vmin=-64, vmax=63, interpolation="none")
 plt.title("map of condition part separated by action")
 plt.colorbar()
 plt.savefig("exp_data\\seed" + str(seed) + "\\map of condition part separated by action")
@@ -286,9 +304,27 @@ red01_1 = np.round(som.nodes).reshape(100,100,7)[0:10,30:40,:]
 green10_1 = np.round(som.nodes).reshape(100,100,7)[40:50,30:40,:]
 green10_0 = np.round(som.nodes).reshape(100,100,7)[40:50,30:40,:]
 
-blue11_0 = np.round(som.nodes).reshape(100,100,7)[70:80,90:99,:]
+blue11_0 = np.round(som.nodes).reshape(100,100,7)[70:80,89:99,:]
 blue11_1 = np.round(som.nodes).reshape(100,100,7)[89:99,30:40,:]
 
-#np.unique(black00_0.reshape(100,7),axis=0)
+black00_0 = np.unique(black00_0.reshape(100,7),axis=0)
+black00_1 = np.unique(black00_1.reshape(100,7),axis=0)
+
+red01_0 = np.unique(red01_0.reshape(100,7),axis=0)
+red01_1 = np.unique(red01_1.reshape(100,7),axis=0)
+
+green10_0 = np.unique(green10_0.reshape(100,7),axis=0)
+green10_1 = np.unique(green10_1.reshape(100,7),axis=0)
+
+blue11_0 = np.unique(blue11_0.reshape(100,7),axis=0)
+blue11_1 = np.unique(blue11_1.reshape(100,7),axis=0)
+
+red01_bound = np.round(som.nodes).reshape(100,100,7)[0:30,40:50,:]
+green10_bound = np.round(som.nodes).reshape(100,100,7)[50:55,0:15,:]
+blue11_bound = np.round(som.nodes).reshape(100,100,7)[89:99,10:15,:]
+
+red01_bound = np.unique(red01_bound.reshape(300,7), axis=0)
+green10_bound = np.unique(green10_bound.reshape(75,7), axis=0)
+blue11_bound = np.unique(blue11_bound.reshape(50,7), axis=0)
 
 print("end of program")

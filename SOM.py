@@ -9,7 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class SOM():
-
     def __init__(self, teachers, head, N):
         self.teachers = np.array(teachers)
         self.n_teacher = self.teachers.shape[0]
@@ -20,22 +19,18 @@ class SOM():
         self.c = np.hstack((y.flatten()[:, np.newaxis],
                             x.flatten()[:, np.newaxis])) #座標の配列に変換
         self.nodes = np.round(np.random.rand(self.N*self.N,
-                                    self.teachers.shape[1]))
+                                    self.teachers.shape[1])) #初期マップの生成
         self.ims = []
 
     def train(self):
         print("training has started.")
 
         for i, teacher in enumerate(self.teachers):
-            if not(self.head == None):
-                idx = list(range(self.head)) + [-1]
-                bmu = self._best_matching_unit(teacher[idx])
-            else:
-                bmu = self._best_matching_unit(teacher[:self.head])
+            bmu = self._best_matching_unit(teacher)
             d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuのmap上での距離
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
-            #teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ学習させる場合
+            #teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
             self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
             
             if i%(len(self.teachers)/100*10)==0:
@@ -60,15 +55,6 @@ class SOM():
         return calc_dist(x)
         
     def _best_matching_unit(self, teacher):
-        """
-        if not(self.head == None):
-            idx = list(range(self.head)) + [-1]
-            nodes = self.nodes[:,idx]
-            teacher = teacher[idx]
-            norms = np.linalg.norm(nodes - teacher, axis=1)
-        else:
-            norms = np.linalg.norm(self.nodes[:, :self.head] - teacher[:self.head], axis=1)
-        """
         if self.head == None:
             norms = np.linalg.norm(self.nodes[:, :self.head] - teacher[:self.head], axis=1)
         else: #self.head != None
@@ -248,8 +234,10 @@ actNodes = np.round(actNodesR)
 correctActNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
 afterNodesRounded = getColoredNodes(np.round(som.nodes),
                                     color="bits2decimal-scale")
+
 afterNodesReverse = np.round(som.nodes)[:,0:-1]
 afterNodesReverse = getColoredNodes(afterNodesReverse[:,::-1], color="bits2decimal-scale")
+
 afterNodesSeparated = afterNodesRounded.copy()
 afterNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
 

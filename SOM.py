@@ -151,18 +151,31 @@ def getColoredNodes(nodes, k=2, color="gray"):
     coloredNodes = []
     if color=="colored":
         for cl in nodes:
-            #addBitsArray = cl[:k].astype(int)
             addBitsArray = cl[:k]
+            refBitsArray = cl[k:-1]
             addBits = [str(int(i)) for i in addBitsArray]
             addBits = "".join(addBits)
+            ansBit = refBitsArray[int(addBits,2)]
             if addBits=="00": #黒
-                coloredNodes.append([0,0,0])
+                if ansBit == 1:
+                    coloredNodes.append([0,0,0])
+                else:
+                    coloredNodes.append([128,128,128])    
             elif addBits=="01": #R
-                coloredNodes.append([255,0,0])
+                if ansBit == 1:
+                    coloredNodes.append([128,0,0])
+                else:
+                    coloredNodes.append([255,0,0])
             elif addBits=="10": #G
-                coloredNodes.append([0,255,0])
+                if ansBit == 1:
+                    coloredNodes.append([0,128,0])
+                else:
+                    coloredNodes.append([0,255,0])
             elif addBits=="11": #B
-                coloredNodes.append([0,0,255])
+                if ansBit == 1:
+                    coloredNodes.append([0,0,128])
+                else:
+                    coloredNodes.append([0,0,255])
 
         coloredNodes = np.array(coloredNodes, dtype = np.uint8)
         return coloredNodes.reshape(N, N, 3)
@@ -291,7 +304,7 @@ plt.savefig("exp_data\\seed" + str(seed) + "\\map of condition part separated by
 plt.figure()
 plt.imshow(afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
 plt.title("map after learning coloerd by address bit")
-plt.savefig("exp_data\\seed" + str(seed) + "\\map after learning coloerd by address bit")    
+plt.savefig("exp_data\\seed" + str(seed) + "\\map after learning coloerd by address and act")    
 
 plt.show()
 

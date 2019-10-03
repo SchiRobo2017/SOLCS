@@ -9,9 +9,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import os
+import math
 
 class SOM():
-    def __init__(self, teachers, head, N):
+    def __init__(self, teachers, head, N, seed=None):
+        #seed setting
+        if seed==None:
+            None
+        else: #seedが設定されている
+            np.random.seed(seed)
+        
         self.teachers = np.array(teachers)
         self.n_teacher = self.teachers.shape[0]
         self.head = head
@@ -83,7 +90,13 @@ class SOM():
         s = self._neighbourhood(t)
         return np.exp(-d**2/(2*s**2))
 
-def generateMUXNodes(num_teachers, k=2, P_sharp = 0, includeAns = False):
+def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = False):
+    #seed setting
+    if seed==None:
+        None
+    else: #seedが設定されている
+        np.random.seed(seed)
+        
     teachers = []
     bits = k + 2**k
     for i in range(num_teachers):
@@ -120,22 +133,14 @@ def getAnsNodes(nodes, k=2):
     ansNodes = []
     for row in nodes:
         for elm in row:
-            addbit = elm[0:k]
-            refbit = elm[k:k+k**2]
-            cal = ""
-            #正解行動
-            for x in range(len(addbit)):
-                #cal += str(int(addbit[x]))
-                cal += str(int(addbit[x]))
-            cal = int(cal,2)
-            ans = refbit[cal]
-            ansNodes.append(ans)
+            ansNodes.append(getAns(elm))
             
     ansNodes = np.array(ansNodes)
     return ansNodes.reshape(nodes.shape[0], nodes.shape[1], 1)
 
 def getColoredNodes(nodes, k=2, color="gray"):
     Max = k + k**2
+    N = int(math.sqrt(nodes.shape[0]))
     coloredNodes = []
     if color=="colored":
         for cl in nodes:
@@ -191,158 +196,164 @@ def getColoredNodes(nodes, k=2, color="gray"):
 
     raise ValueError("colorに渡す引数が間違ってるよ")
 
-seed = 10
-N = 100
-k = 2
-includeAns = True
-bits = k + 2**k
-if includeAns==True:
-    bits+=1
-num_teachers = 10000 #default=10000 収束する   
 
-dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-dirStr_result = "exp_data\\seed" + int(seed)
-os.makedirs(dirStr_result ,exist_ok=True)
+def main():
+    seed_teacher = 10
+    seed_train = 10
+    N = 100
+    k = 2
+    includeAns = True
+    bits = k + 2**k
+    if includeAns==True:
+        bits+=1
+    num_teachers = 10000 #default=10000 収束する   
     
-np.random.seed(seed) #教師データシード
-teachers = generateMUXNodes(k=2, includeAns=includeAns,
-                            num_teachers=num_teachers)
+    dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    dirStr_result = "exp_data\\seed" + str(seed_train) #todo:命名規則の統一(適当に名前つけたので)
+    os.makedirs(dirStr_result ,exist_ok=True)
+        
+    #np.random.seed(seed) #教師データシード caution:中間発表ではシードの初期化はここだけ
+    teachers = generateMUXNodes(seed=seed_teacher, k=2, includeAns=includeAns,
+                                num_teachers=num_teachers)
+    
+    #np.random.seed(seed) #初期化シード caution:中間発表の結果を再現するときはこの行をコメントアウトする
+    som = SOM(teachers, head=3, N=N, seed=None)
+    
+    m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
+    m1 = np.round(m)
+    iniNodes = getColoredNodes(som.nodes,
+                               color="bits2decimal-scale")
+    iniNodesColored = getColoredNodes(np.round(som.nodes),
+                                      color="colored")
+    iniCorrectActNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
+    
+    #plt.figure()
+    #plt.imshow(iniCorrectActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
+    #plt.title("initial map of actions")
+    #plt.savefig(dirStr_result + "\\initial map of actions.png")
+    
+    #plt.figure()
+    #plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
+    #plt.title("initial map of condition by 64 scale")
+    #plt.savefig(dirStr_result + str(seed) + "\\initial map of condition by 64 scale")
+    
+    #plt.figure()
+    #plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
+    #plt.title("initial map colored by address bit")
+    #plt.savefig(dirStr_result + "\\initial map colored by address bit")
+    
+    som.train()
+    
+    actNodesR = som.nodes[:,-1].reshape(N, N)
+    actNodes = np.round(actNodesR)
+    correctActNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
+    afterNodesRounded = getColoredNodes(np.round(som.nodes),
+                                        color="bits2decimal-scale")
+    
+    afterNodesReverse = np.round(som.nodes)[:,0:-1]
+    afterNodesReverse = getColoredNodes(afterNodesReverse[:,::-1], color="bits2decimal-scale")
+    
+    afterNodesSeparated = afterNodesRounded.copy()
+    afterNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
+    
+    """
+    plt.figure()
+    plt.imshow(actNodesR, cmap="gray", vmin=0, vmax=1,
+               interpolation="none")
+    plt.title("map of action part after leaning(continuous value)")
+    plt.savefig(dirStr_result + 
+                "\\map of action part after leaning(countinuous value)")
+    """
+    
+    plt.figure()
+    plt.imshow(actNodes, cmap="gray", vmin=0, vmax=1,
+               interpolation="none")
+    plt.title("map of action part after leaning")
+    plt.savefig(dirStr_result +
+                "\\map of action part after leaning" 
+                + dt_now)
+    
+    plt.figure()
+    plt.imshow(correctActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
+    plt.title("map of correct action part after leaning")
+    plt.savefig(dirStr_result +
+                "\\map of correct action part after leaning"
+                + dt_now)
+    
+    plt.figure()
+    plt.imshow(afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
+    plt.title("map of condition part after learning")
+    plt.colorbar()
+    plt.savefig(dirStr_result +
+                "\\map of condition part after learning"
+                + dt_now)
+    
+    plt.figure()
+    plt.imshow(afterNodesReverse , cmap="gray", vmin=0, vmax=63, interpolation="none")
+    plt.title("map of condition part after learning(reversed value)")
+    plt.colorbar()
+    plt.savefig(dirStr_result +
+                "\\map of condition part after learning(reversed value)" 
+                + dt_now)
+    
+    for i, row in enumerate(correctActNodes):
+        for j, ans in enumerate(row):
+            if ans == 1.0:
+                None
+            elif ans == 0.0:
+                val = afterNodesSeparated[i,j]
+                afterNodesSeparated[i,j] = -val
+                
+    plt.figure()
+    plt.imshow(afterNodesSeparated, cmap="PuOr", vmin=-64, vmax=63, interpolation="none")
+    plt.title("map of condition part separated by action")
+    plt.colorbar()
+    plt.savefig(dirStr_result +
+                "\\map of condition part separated by action" 
+                + dt_now)
+    
+    plt.figure()
+    plt.imshow(afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
+    plt.title("map after learning coloerd by address bit")
+    plt.savefig(dirStr_result +
+                "\\map after learning coloerd by address and act" 
+                + dt_now)    
+    
+    plt.show()
+    
+    black00_0 = np.round(som.nodes).reshape(100,100,7)[40:50,85:95,:]
+    black00_1 = np.round(som.nodes).reshape(100,100,7)[0:10,0:10,:]
+    
+    red01_0 = np.round(som.nodes).reshape(100,100,7)[0:10,50:60,:]
+    red01_1 = np.round(som.nodes).reshape(100,100,7)[0:10,30:40,:]
+    
+    green10_1 = np.round(som.nodes).reshape(100,100,7)[40:50,30:40,:]
+    green10_0 = np.round(som.nodes).reshape(100,100,7)[40:50,30:40,:]
+    
+    blue11_0 = np.round(som.nodes).reshape(100,100,7)[70:80,89:99,:]
+    blue11_1 = np.round(som.nodes).reshape(100,100,7)[89:99,30:40,:]
+    
+    black00_0 = np.unique(black00_0.reshape(100,7),axis=0)
+    black00_1 = np.unique(black00_1.reshape(100,7),axis=0)
+    
+    red01_0 = np.unique(red01_0.reshape(100,7),axis=0)
+    red01_1 = np.unique(red01_1.reshape(100,7),axis=0)
+    
+    green10_0 = np.unique(green10_0.reshape(100,7),axis=0)
+    green10_1 = np.unique(green10_1.reshape(100,7),axis=0)
+    
+    blue11_0 = np.unique(blue11_0.reshape(100,7),axis=0)
+    blue11_1 = np.unique(blue11_1.reshape(100,7),axis=0)
+    
+    red01_bound = np.round(som.nodes).reshape(100,100,7)[0:30,40:50,:]
+    green10_bound = np.round(som.nodes).reshape(100,100,7)[50:55,0:15,:]
+    blue11_bound = np.round(som.nodes).reshape(100,100,7)[89:99,10:15,:]
+    
+    red01_bound = np.unique(red01_bound.reshape(300,7), axis=0)
+    green10_bound = np.unique(green10_bound.reshape(75,7), axis=0)
+    blue11_bound = np.unique(blue11_bound.reshape(50,7), axis=0)
+    
+    print("end of program")
 
-np.random.seed(seed+2) #初期化シード
-som = SOM(teachers, head=3, N=N)
-
-m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
-m1 = np.round(m)
-iniNodes = getColoredNodes(som.nodes,
-                           color="bits2decimal-scale")
-iniNodesColored = getColoredNodes(np.round(som.nodes),
-                                  color="colored")
-iniCorrectActNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
-
-#plt.figure()
-#plt.imshow(iniCorrectActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
-#plt.title("initial map of actions")
-#plt.savefig(dirStr_result + "\\initial map of actions.png")
-
-#plt.figure()
-#plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
-#plt.title("initial map of condition by 64 scale")
-#plt.savefig(dirStr_result + str(seed) + "\\initial map of condition by 64 scale")
-
-#plt.figure()
-#plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
-#plt.title("initial map colored by address bit")
-#plt.savefig(dirStr_result + "\\initial map colored by address bit")
-
-som.train()
-
-actNodesR = som.nodes[:,-1].reshape(N, N)
-actNodes = np.round(actNodesR)
-correctActNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
-afterNodesRounded = getColoredNodes(np.round(som.nodes),
-                                    color="bits2decimal-scale")
-
-afterNodesReverse = np.round(som.nodes)[:,0:-1]
-afterNodesReverse = getColoredNodes(afterNodesReverse[:,::-1], color="bits2decimal-scale")
-
-afterNodesSeparated = afterNodesRounded.copy()
-afterNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
-
-"""
-plt.figure()
-plt.imshow(actNodesR, cmap="gray", vmin=0, vmax=1,
-           interpolation="none")
-plt.title("map of action part after leaning(continuous value)")
-plt.savefig(dirStr_result + 
-            "\\map of action part after leaning(countinuous value)")
-"""
-
-plt.figure()
-plt.imshow(actNodes, cmap="gray", vmin=0, vmax=1,
-           interpolation="none")
-plt.title("map of action part after leaning")
-plt.savefig(dirStr_result +
-            "\\map of action part after leaning" 
-            + dt_now)
-
-plt.figure()
-plt.imshow(correctActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
-plt.title("map of correct action part after leaning")
-plt.savefig(dirStr_result +
-            "\\map of correct action part after leaning"
-            + dt_now)
-
-plt.figure()
-plt.imshow(afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
-plt.title("map of condition part after learning")
-plt.colorbar()
-plt.savefig(dirStr_result +
-            "\\map of condition part after learning"
-            + dt_now)
-
-plt.figure()
-plt.imshow(afterNodesReverse , cmap="gray", vmin=0, vmax=63, interpolation="none")
-plt.title("map of condition part after learning(reversed value)")
-plt.colorbar()
-plt.savefig(dirStr_result +
-            "\\map of condition part after learning(reversed value)" 
-            + dt_now)
-
-for i, row in enumerate(correctActNodes):
-    for j, ans in enumerate(row):
-        if ans == 1.0:
-            None
-        elif ans == 0.0:
-            val = afterNodesSeparated[i,j]
-            afterNodesSeparated[i,j] = -val
-            
-plt.figure()
-plt.imshow(afterNodesSeparated, cmap="PuOr", vmin=-64, vmax=63, interpolation="none")
-plt.title("map of condition part separated by action")
-plt.colorbar()
-plt.savefig(dirStr_result +
-            "\\map of condition part separated by action" 
-            + dt_now)
-
-plt.figure()
-plt.imshow(afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
-plt.title("map after learning coloerd by address bit")
-plt.savefig(dirStr_result +
-            "\\map after learning coloerd by address and act" 
-            + dt_now)    
-
-plt.show()
-
-black00_0 = np.round(som.nodes).reshape(100,100,7)[40:50,85:95,:]
-black00_1 = np.round(som.nodes).reshape(100,100,7)[0:10,0:10,:]
-
-red01_0 = np.round(som.nodes).reshape(100,100,7)[0:10,50:60,:]
-red01_1 = np.round(som.nodes).reshape(100,100,7)[0:10,30:40,:]
-
-green10_1 = np.round(som.nodes).reshape(100,100,7)[40:50,30:40,:]
-green10_0 = np.round(som.nodes).reshape(100,100,7)[40:50,30:40,:]
-
-blue11_0 = np.round(som.nodes).reshape(100,100,7)[70:80,89:99,:]
-blue11_1 = np.round(som.nodes).reshape(100,100,7)[89:99,30:40,:]
-
-black00_0 = np.unique(black00_0.reshape(100,7),axis=0)
-black00_1 = np.unique(black00_1.reshape(100,7),axis=0)
-
-red01_0 = np.unique(red01_0.reshape(100,7),axis=0)
-red01_1 = np.unique(red01_1.reshape(100,7),axis=0)
-
-green10_0 = np.unique(green10_0.reshape(100,7),axis=0)
-green10_1 = np.unique(green10_1.reshape(100,7),axis=0)
-
-blue11_0 = np.unique(blue11_0.reshape(100,7),axis=0)
-blue11_1 = np.unique(blue11_1.reshape(100,7),axis=0)
-
-red01_bound = np.round(som.nodes).reshape(100,100,7)[0:30,40:50,:]
-green10_bound = np.round(som.nodes).reshape(100,100,7)[50:55,0:15,:]
-blue11_bound = np.round(som.nodes).reshape(100,100,7)[89:99,10:15,:]
-
-red01_bound = np.unique(red01_bound.reshape(300,7), axis=0)
-green10_bound = np.unique(green10_bound.reshape(75,7), axis=0)
-blue11_bound = np.unique(blue11_bound.reshape(50,7), axis=0)
-
-print("end of program")
+if __name__ == "__main__":
+    main()

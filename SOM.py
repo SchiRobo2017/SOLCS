@@ -7,6 +7,8 @@ Created on Wed Jul 24 15:36:50 2019
 
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
+import os
 
 class SOM():
     def __init__(self, teachers, head, N):
@@ -197,11 +199,16 @@ bits = k + 2**k
 if includeAns==True:
     bits+=1
 num_teachers = 10000 #default=10000 収束する   
-    
-np.random.seed(seed)
 
+dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+dirStr_result = "exp_data\\seed" + int(seed)
+os.makedirs(dirStr_result ,exist_ok=True)
+    
+np.random.seed(seed) #教師データシード
 teachers = generateMUXNodes(k=2, includeAns=includeAns,
                             num_teachers=num_teachers)
+
+np.random.seed(seed+2) #初期化シード
 som = SOM(teachers, head=3, N=N)
 
 m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
@@ -215,17 +222,17 @@ iniCorrectActNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
 #plt.figure()
 #plt.imshow(iniCorrectActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
 #plt.title("initial map of actions")
-#plt.savefig("exp_data\\seed" + str(seed) + "\\initial map of actions.png")
+#plt.savefig(dirStr_result + "\\initial map of actions.png")
 
 #plt.figure()
 #plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
 #plt.title("initial map of condition by 64 scale")
-#plt.savefig("exp_data\\seed" + str(seed) + "\\initial map of condition by 64 scale")
+#plt.savefig(dirStr_result + str(seed) + "\\initial map of condition by 64 scale")
 
 #plt.figure()
 #plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
 #plt.title("initial map colored by address bit")
-#plt.savefig("exp_data\\seed" + str(seed) + "\\initial map colored by address bit")
+#plt.savefig(dirStr_result + "\\initial map colored by address bit")
 
 som.train()
 
@@ -246,7 +253,7 @@ plt.figure()
 plt.imshow(actNodesR, cmap="gray", vmin=0, vmax=1,
            interpolation="none")
 plt.title("map of action part after leaning(continuous value)")
-plt.savefig("exp_data\\seed" + str(seed) + 
+plt.savefig(dirStr_result + 
             "\\map of action part after leaning(countinuous value)")
 """
 
@@ -254,26 +261,32 @@ plt.figure()
 plt.imshow(actNodes, cmap="gray", vmin=0, vmax=1,
            interpolation="none")
 plt.title("map of action part after leaning")
-plt.savefig("exp_data\\seed" + str(seed) + 
-            "\\map of action part after leaning")
+plt.savefig(dirStr_result +
+            "\\map of action part after leaning" 
+            + dt_now)
 
 plt.figure()
 plt.imshow(correctActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
 plt.title("map of correct action part after leaning")
-plt.savefig("exp_data\\seed" + str(seed) +
-            "\\map of correct action part after leaning")
+plt.savefig(dirStr_result +
+            "\\map of correct action part after leaning"
+            + dt_now)
 
 plt.figure()
 plt.imshow(afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
 plt.title("map of condition part after learning")
 plt.colorbar()
-plt.savefig("exp_data\\seed" + str(seed) + "\\map of condition part after learning")
+plt.savefig(dirStr_result +
+            "\\map of condition part after learning"
+            + dt_now)
 
 plt.figure()
 plt.imshow(afterNodesReverse , cmap="gray", vmin=0, vmax=63, interpolation="none")
 plt.title("map of condition part after learning(reversed value)")
 plt.colorbar()
-plt.savefig("exp_data\\seed" + str(seed) + "\\map of condition part after learning(reversed value)")
+plt.savefig(dirStr_result +
+            "\\map of condition part after learning(reversed value)" 
+            + dt_now)
 
 for i, row in enumerate(correctActNodes):
     for j, ans in enumerate(row):
@@ -287,12 +300,16 @@ plt.figure()
 plt.imshow(afterNodesSeparated, cmap="PuOr", vmin=-64, vmax=63, interpolation="none")
 plt.title("map of condition part separated by action")
 plt.colorbar()
-plt.savefig("exp_data\\seed" + str(seed) + "\\map of condition part separated by action")
+plt.savefig(dirStr_result +
+            "\\map of condition part separated by action" 
+            + dt_now)
 
 plt.figure()
 plt.imshow(afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
 plt.title("map after learning coloerd by address bit")
-plt.savefig("exp_data\\seed" + str(seed) + "\\map after learning coloerd by address and act")    
+plt.savefig(dirStr_result +
+            "\\map after learning coloerd by address and act" 
+            + dt_now)    
 
 plt.show()
 

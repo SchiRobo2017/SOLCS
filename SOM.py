@@ -117,28 +117,36 @@ def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = Fal
     return teachers
 
 def getAns(bitArray, k=2):
-    addbit = bitArray[0:k]
+    addbit = bitArray[:k]
     refbit = bitArray[k:]
     cal = ""
     #正解行動
     for x in range(len(addbit)):
         #cal += str(int(addbit[x]))
+        #print("x=", x)
+        #print("addbit=", addbit)
+        #print("addbit[x]=", str(int(addbit[x])))
+        #print()
         cal += str(int(addbit[x]))
+
     cal = int(cal,2)
+    #print(bitArray)
+    #print(cal)
     ans = refbit[cal]
+    #print(ans)
     return ans
 
 #act含む/含まない両方対応
-def getAnsNodes(nodes, k=2):
+def getAnsNodes(nodes, k=2): #nodes.shape must be [N*N, bits]
     ansNodes = []
-    for row in nodes:
-        for elm in row:
-            ansNodes.append(getAns(elm))
+    N = int(math.sqrt(nodes.shape[0]))
+    for cl in nodes:
+        ansNodes.append(getAns(cl))
             
     ansNodes = np.array(ansNodes)
-    return ansNodes.reshape(nodes.shape[0], nodes.shape[1], 1)
+    return ansNodes.reshape(N, N)
 
-def getColoredNodes(nodes, k=2, color="gray"):
+def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     Max = k + k**2
     N = int(math.sqrt(nodes.shape[0]))
     coloredNodes = []
@@ -219,13 +227,11 @@ def main():
     #np.random.seed(seed) #初期化シード caution:中間発表の結果を再現するときはこの行をコメントアウトする
     som = SOM(teachers, head=3, N=N, seed=None)
     
-    m = som.nodes.reshape((N,N,bits)) #initial nodes of cl
-    m1 = np.round(m)
     iniNodes = getColoredNodes(som.nodes,
                                color="bits2decimal-scale")
     iniNodesColored = getColoredNodes(np.round(som.nodes),
                                       color="colored")
-    iniCorrectActNodes = getAnsNodes(m1).reshape(N,N) #initial nodes of ansers
+    iniCorrectActNodes = getAnsNodes(np.round(som.nodes)).reshape(N,N) #initial nodes of ansers
     
     #plt.figure()
     #plt.imshow(iniCorrectActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
@@ -244,9 +250,11 @@ def main():
     
     som.train()
     
-    actNodesR = som.nodes[:,-1].reshape(N, N)
-    actNodes = np.round(actNodesR)
-    correctActNodes = getAnsNodes(np.round(som.nodes.reshape(N,N,bits))).reshape(N,N)
+    #som.nodes.shape = (N*N=100*100, bits=7)
+    
+    actNodesRealNum = som.nodes[:,-1].reshape(N, N)
+    actNodes = np.round(actNodesRealNum)
+    correctActNodes = getAnsNodes(np.round(som.nodes))
     afterNodesRounded = getColoredNodes(np.round(som.nodes),
                                         color="bits2decimal-scale")
     

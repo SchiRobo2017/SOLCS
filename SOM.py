@@ -197,33 +197,69 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
 
     raise ValueError("colorに渡す引数が間違ってるよ")
 
-
-def main():
-    seed_teacher = 10
-    seed_train = 10
-    N = 100
-    k = 2
-    includeAns = True
-    bits = k + 2**k
-    if includeAns==True:
-        bits+=1
-    num_teachers = 10000 #default=10000 収束する   
-    
-    dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-    dirStr_result = "exp_data\\seed" + str(seed_train) #todo:命名規則の統一(適当に名前つけたので)
-    os.makedirs(dirStr_result ,exist_ok=True)
+class Main():
+    def __init__(self):
+        self.seed_teacher = 10
+        self.seed_train = 10
+        self.N = 100
+        self.k = 2
+        self.includeAns = True
+        self.bits = self.k + 2**self.k
+        if self.includeAns==True:
+            self.bits+=1
+        self.num_teachers = 10000 #default=10000 収束する   
         
-    teachers = generateMUXNodes(seed=seed_teacher, k=2, includeAns=includeAns,
-                                num_teachers=num_teachers)
+        self.dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        self.dirStr_result = "exp_data\\seed" + str(self.seed_train) #todo:命名規則の統一(適当に名前つけたので)
+        os.makedirs(self.dirStr_result ,exist_ok=True)
+            
+        self.teachers = generateMUXNodes(seed=self.seed_teacher, k=2, includeAns=self.includeAns,
+                                    num_teachers=self.num_teachers)
+        
+        self.som = SOM(self.teachers, head=3, N=self.N, seed=None)
+
+    def main(self):
+        self.som.train() #som.nodes.shape = (N*N=100*100, bits=7)
+        
+        #結果をpickleに保存
+        with open(self.dirStr_result + "\\" + "nodes.bin", "wb") as nodes:
+            pickle.dump(self.som.nodes, nodes)        
+
+        #how to load
+        #with open("nodes.bin", "rb") as nodes:
+        #   nodes = pickle.load(nodes)        
+
+if __name__ == "__main__":
+    main = Main()
+    main.main()
     
-    som = SOM(teachers, head=3, N=N, seed=None)
+    """
+    Part of result data analysis
+    """
     
-    iniNodes = getColoredNodes(som.nodes,
-                               color="bits2decimal-scale")
-    iniNodesColored = getColoredNodes(np.round(som.nodes),
-                                      color="colored")
-    iniCorrectActNodes = getAnsNodes(np.round(som.nodes)).reshape(N,N) #initial nodes of ansers
     
+    """
+    Defining map objects for showing
+    """
+    #iniNodes = None #colored initial nodes with bits2decimal-scale
+    #iniNodesColored = None #colored initiol nodes rounded
+    #iniCorrectActNodes = None #correct action nodes
+    actNodesRealNum = nodes[:,-1].reshape(N, N)
+    actNodes = np.round(actNodesRealNum)
+    correctActNodes = getAnsNodes(np.round(nodes))
+    afterNodesRounded = getColoredNodes(np.round(nodes),
+                                        color="bits2decimal-scale")
+    
+    afterNodesReverse = np.round(som.nodes)[:,0:-1]
+    afterNodesReverse = getColoredNodes(afterNodesReverse[:,::-1], color="bits2decimal-scale")
+    
+    afterNodesSeparated = afterNodesRounded.copy()
+    afterNodesColored = getColoredNodes(np.round(som.nodes), color="colored")        
+    
+
+    """
+    Showing map
+    """
     #plt.figure()
     #plt.imshow(iniCorrectActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
     #plt.title("initial map of actions")
@@ -238,28 +274,6 @@ def main():
     #plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
     #plt.title("initial map colored by address bit")
     #plt.savefig(dirStr_result + "\\initial map colored by address bit")
-    
-    som.train() #som.nodes.shape = (N*N=100*100, bits=7)
-    
-    #結果をpickleに保存
-    with open(dirStr_result + "\\" + "nodes.bin", "wb") as nodes:
-        pickle.dump(som.nodes, nodes)
-
-    #how to load
-    #with open("nodes.bin", "rb") as nodes:
-    #   nodes = pickle.load(nodes)
-    
-    actNodesRealNum = som.nodes[:,-1].reshape(N, N)
-    actNodes = np.round(actNodesRealNum)
-    correctActNodes = getAnsNodes(np.round(som.nodes))
-    afterNodesRounded = getColoredNodes(np.round(som.nodes),
-                                        color="bits2decimal-scale")
-    
-    afterNodesReverse = np.round(som.nodes)[:,0:-1]
-    afterNodesReverse = getColoredNodes(afterNodesReverse[:,::-1], color="bits2decimal-scale")
-    
-    afterNodesSeparated = afterNodesRounded.copy()
-    afterNodesColored = getColoredNodes(np.round(som.nodes), color="colored")
     
     """
     plt.figure()
@@ -325,7 +339,17 @@ def main():
                 "\\map after learning coloerd by address and act" 
                 + dt_now)    
     
-    plt.show()
+    #plt.show()
+    
+    """
+    classifiers each of adress part or bound data on map
+    """
+    black00 = []
+    for cl in som.nodes:
+        if ([0,0] == cl[:2]).all():
+            black00.append(cl)
+    black00 = np.array(black00)
+    black00_unique = np.unique(black00, axis=0)
     
     black00_0 = np.round(som.nodes).reshape(100,100,7)[40:50,85:95,:]
     black00_1 = np.round(som.nodes).reshape(100,100,7)[0:10,0:10,:]
@@ -358,8 +382,3 @@ def main():
     red01_bound = np.unique(red01_bound.reshape(300,7), axis=0)
     green10_bound = np.unique(green10_bound.reshape(75,7), axis=0)
     blue11_bound = np.unique(blue11_bound.reshape(50,7), axis=0)
-    
-    print("end of program")
-
-if __name__ == "__main__":
-    main()

@@ -122,24 +122,16 @@ def getAns(bitArray, k=2):
     cal = ""
     #正解行動
     for x in range(len(addbit)):
-        #cal += str(int(addbit[x]))
-        #print("x=", x)
-        #print("addbit=", addbit)
-        #print("addbit[x]=", str(int(addbit[x])))
-        #print()
         cal += str(int(addbit[x]))
 
     cal = int(cal,2)
-    #print(bitArray)
-    #print(cal)
     ans = refbit[cal]
-    #print(ans)
     return ans
 
 #act含む/含まない両方対応
 def getAnsNodes(nodes, k=2): #nodes.shape must be [N*N, bits]
     ansNodes = []
-    N = int(math.sqrt(nodes.shape[0]))
+    N = int(math.sqrt(nodes.shape[0])) #edge length of the map
     for cl in nodes:
         ansNodes.append(getAns(cl))
             
@@ -148,7 +140,7 @@ def getAnsNodes(nodes, k=2): #nodes.shape must be [N*N, bits]
 
 def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     Max = k + k**2
-    N = int(math.sqrt(nodes.shape[0]))
+    N = int(math.sqrt(nodes.shape[0])) #edge length of the map
     coloredNodes = []
     if color=="colored":
         for cl in nodes:
@@ -220,11 +212,9 @@ def main():
     dirStr_result = "exp_data\\seed" + str(seed_train) #todo:命名規則の統一(適当に名前つけたので)
     os.makedirs(dirStr_result ,exist_ok=True)
         
-    #np.random.seed(seed) #教師データシード caution:中間発表ではシードの初期化はここだけ
     teachers = generateMUXNodes(seed=seed_teacher, k=2, includeAns=includeAns,
                                 num_teachers=num_teachers)
     
-    #np.random.seed(seed) #初期化シード caution:中間発表の結果を再現するときはこの行をコメントアウトする
     som = SOM(teachers, head=3, N=N, seed=None)
     
     iniNodes = getColoredNodes(som.nodes,

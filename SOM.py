@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import datetime
 import os
 import math
+import pickle
 
 class SOM():
     def __init__(self, teachers, head, N, seed=None):
@@ -238,9 +239,15 @@ def main():
     #plt.title("initial map colored by address bit")
     #plt.savefig(dirStr_result + "\\initial map colored by address bit")
     
-    som.train()
+    som.train() #som.nodes.shape = (N*N=100*100, bits=7)
     
-    #som.nodes.shape = (N*N=100*100, bits=7)
+    #結果をpickleに保存
+    with open(dirStr_result + "\\" + "nodes.bin", "wb") as nodes:
+        pickle.dump(som.nodes, nodes)
+
+    #how to load
+    #with open("nodes.bin", "rb") as nodes:
+    #   nodes = pickle.load(nodes)
     
     actNodesRealNum = som.nodes[:,-1].reshape(N, N)
     actNodes = np.round(actNodesRealNum)
@@ -294,6 +301,7 @@ def main():
                 "\\map of condition part after learning(reversed value)" 
                 + dt_now)
     
+    #afterNodesSeparatedの値を行動の0,1に応じて色分け
     for i, row in enumerate(correctActNodes):
         for j, ans in enumerate(row):
             if ans == 1.0:

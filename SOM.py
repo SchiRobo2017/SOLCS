@@ -234,13 +234,10 @@ if __name__ == "__main__":
     main.main()
     
     """
-    Part of result data analysis
+    map objects for showing
     """
-    
-    
-    """
-    Defining map objects for showing
-    """
+    nodes = main.som.nodes
+    N = int(math.sqrt(nodes.shape[0]))
     #iniNodes = None #colored initial nodes with bits2decimal-scale
     #iniNodesColored = None #colored initiol nodes rounded
     #iniCorrectActNodes = None #correct action nodes
@@ -250,16 +247,20 @@ if __name__ == "__main__":
     afterNodesRounded = getColoredNodes(np.round(nodes),
                                         color="bits2decimal-scale")
     
-    afterNodesReverse = np.round(som.nodes)[:,0:-1]
+    afterNodesReverse = np.round(nodes)[:,0:-1]
     afterNodesReverse = getColoredNodes(afterNodesReverse[:,::-1], color="bits2decimal-scale")
     
     afterNodesSeparated = afterNodesRounded.copy()
-    afterNodesColored = getColoredNodes(np.round(som.nodes), color="colored")        
+    afterNodesColored = getColoredNodes(np.round(nodes), color="colored")        
     
 
     """
     Showing map
     """
+    seed_train = 10 #hack:Mainで定義してるけどここで使えないのでもう一回定義
+    dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    dirStr_result = "exp_data\\seed" + str(seed_train) #todo:命名規則の統一(適当に名前つけたので)    
+    
     #plt.figure()
     #plt.imshow(iniCorrectActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
     #plt.title("initial map of actions")
@@ -339,29 +340,29 @@ if __name__ == "__main__":
                 "\\map after learning coloerd by address and act" 
                 + dt_now)    
     
-    #plt.show()
+    plt.show()
     
     """
     classifiers each of adress part or bound data on map
     """
     black00 = []
-    for cl in som.nodes:
+    for cl in np.round(nodes):
         if ([0,0] == cl[:2]).all():
             black00.append(cl)
     black00 = np.array(black00)
     black00_unique = np.unique(black00, axis=0)
     
-    black00_0 = np.round(som.nodes).reshape(100,100,7)[40:50,85:95,:]
-    black00_1 = np.round(som.nodes).reshape(100,100,7)[0:10,0:10,:]
+    black00_0 = np.round(nodes).reshape(100,100,7)[40:50,85:95,:]
+    black00_1 = np.round(nodes).reshape(100,100,7)[0:10,0:10,:]
     
-    red01_0 = np.round(som.nodes).reshape(100,100,7)[0:10,50:60,:]
-    red01_1 = np.round(som.nodes).reshape(100,100,7)[0:10,30:40,:]
+    red01_0 = np.round(nodes).reshape(100,100,7)[0:10,50:60,:]
+    red01_1 = np.round(nodes).reshape(100,100,7)[0:10,30:40,:]
     
-    green10_1 = np.round(som.nodes).reshape(100,100,7)[40:50,30:40,:]
-    green10_0 = np.round(som.nodes).reshape(100,100,7)[40:50,30:40,:]
+    green10_1 = np.round(nodes).reshape(100,100,7)[40:50,30:40,:]
+    green10_0 = np.round(nodes).reshape(100,100,7)[40:50,30:40,:]
     
-    blue11_0 = np.round(som.nodes).reshape(100,100,7)[70:80,89:99,:]
-    blue11_1 = np.round(som.nodes).reshape(100,100,7)[89:99,30:40,:]
+    blue11_0 = np.round(nodes).reshape(100,100,7)[70:80,89:99,:]
+    blue11_1 = np.round(nodes).reshape(100,100,7)[89:99,30:40,:]
     
     black00_0 = np.unique(black00_0.reshape(100,7),axis=0)
     black00_1 = np.unique(black00_1.reshape(100,7),axis=0)
@@ -375,9 +376,9 @@ if __name__ == "__main__":
     blue11_0 = np.unique(blue11_0.reshape(100,7),axis=0)
     blue11_1 = np.unique(blue11_1.reshape(100,7),axis=0)
     
-    red01_bound = np.round(som.nodes).reshape(100,100,7)[0:30,40:50,:]
-    green10_bound = np.round(som.nodes).reshape(100,100,7)[50:55,0:15,:]
-    blue11_bound = np.round(som.nodes).reshape(100,100,7)[89:99,10:15,:]
+    red01_bound = np.round(nodes).reshape(100,100,7)[0:30,40:50,:]
+    green10_bound = np.round(nodes).reshape(100,100,7)[50:55,0:15,:]
+    blue11_bound = np.round(nodes).reshape(100,100,7)[89:99,10:15,:]
     
     red01_bound = np.unique(red01_bound.reshape(300,7), axis=0)
     green10_bound = np.unique(green10_bound.reshape(75,7), axis=0)

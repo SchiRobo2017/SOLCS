@@ -13,7 +13,7 @@ import math
 import pickle
 
 class SOM():
-    def __init__(self, teachers, head, N, seed=None):
+    def __init__(self, teachers, N, head=None, seed=None):
         #seed setting
         if seed==None:
             None
@@ -40,14 +40,22 @@ class SOM():
             d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuのmap上での距離
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
-            #teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
-            self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
+            
+            self.nodes[:,[0,1,2,-1]] +=  L * S[:, np.newaxis] * (teacher[[0,1,2,-1]] - self.nodes[:,[0,1,2,-1]])#teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
+            #self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
             
             if i%(len(self.teachers)/100*10)==0:
                 print("progress : " + str(i/len(self.teachers)*100) + "%")
 
         print("training has finished")
         return self.nodes
+
+    def mapping(self, mappingDataList):
+        mapped = np.full((self.N, self.N, self.teachers.shape[1]), -1)
+        for i, cl in enumerate(mappingDataList):
+            idx = self._best_matching_unit(cl)
+            mapped[idx] = cl
+        return mapped.reshape(self.N*self.N, self.teachers.shape[1])
     
     def _distance(self, x, axis = 1): #usage: distance(a-b)
         # #含む距離
@@ -89,8 +97,8 @@ class SOM():
     def _learning_radius(self, t, d):
         # d is distance from BMU
         s = self._neighbourhood(t)
-        return np.exp(-d**2/(2*s**2))
-
+        return np.exp(-d**2/(2*s**2))            
+            
 def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = False):
     #seed setting
     if seed==None:
@@ -145,11 +153,15 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     coloredNodes = []
     if color=="colored":
         for cl in nodes:
-            addBitsArray = cl[:k]
-            refBitsArray = cl[k:-1]
-            addBits = [str(int(i)) for i in addBitsArray]
-            addBits = "".join(addBits)
-            ansBit = refBitsArray[int(addBits,2)]
+            addBits = None
+            ansBit = None
+            if cl[0] != -1:
+                addBitsArray = cl[:k]
+                refBitsArray = cl[k:-1]
+                addBits = [str(int(i)) for i in addBitsArray]
+                addBits = "".join(addBits)
+                ansBit = refBitsArray[int(addBits,2)]
+
             if addBits=="00": #黒
                 if ansBit == 1:
                     coloredNodes.append([0,0,0])
@@ -170,6 +182,8 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
                     coloredNodes.append([0,0,128])
                 else:
                     coloredNodes.append([0,0,255])
+            else: #W
+                coloredNodes.append([255,255,255])
 
         coloredNodes = np.array(coloredNodes, dtype = np.uint8)
         return coloredNodes.reshape(N, N, 3)
@@ -202,6 +216,7 @@ class Main():
         self.seed_teacher = 10
         self.seed_train = 10
         self.N = 100
+        self.head = 3
         self.k = 2
         self.includeAns = True
         self.bits = self.k + 2**self.k
@@ -216,7 +231,7 @@ class Main():
         self.teachers = generateMUXNodes(seed=self.seed_teacher, k=2, includeAns=self.includeAns,
                                     num_teachers=self.num_teachers)
         
-        self.som = SOM(self.teachers, head=3, N=self.N, seed=None)
+        self.som = SOM(self.teachers, N=self.N, head=self.head, seed=None)
 
     def main(self):
         self.som.train() #som.nodes.shape = (N*N=100*100, bits=7)
@@ -338,7 +353,35 @@ if __name__ == "__main__":
     plt.title("map after learning coloerd by address bit")
     plt.savefig(dirStr_result +
                 "\\map after learning coloerd by address and act" 
-                + dt_now)    
+                + dt_now)
+    
+    plt.show()
+
+    #mappingDataList = np.array(generateMUXNodes(100,includeAns=True))
+    mappingDataSequencial = []
+    for i in range(0,64):
+        mappingDataSequencial.append(str(bin(i))[2:].zfill(6))
+        
+    mappingDataSequencial = [list(x) for x in mappingDataSequencial]
+    for i, row in enumerate(mappingDataSequencial):
+        mappingDataSequencial[i] = [int(x) for x in row]
+    
+    for cl in mappingDataSequencial:
+        cl.append(getAns(cl))
+    
+    mappingDataSequencial = np.array(mappingDataSequencial).reshape(len(mappingDataSequencial),len(mappingDataSequencial[0]))
+
+    main.som.head = None
+    mapped = main.som.mapping(mappingDataSequencial)
+    
+    mappedColored = getColoredNodes(mapped, color="colored")
+    
+    plt.figure()
+    plt.imshow(mappedColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
+    plt.title("map of new classifier input")
+    plt.savefig(dirStr_result +
+                "\\map of new classifier input" 
+                + dt_now)
     
     plt.show()
     
@@ -351,35 +394,24 @@ if __name__ == "__main__":
             black00.append(cl)
     black00 = np.array(black00)
     black00_unique = np.unique(black00, axis=0)
+
+    red01 = []
+    for cl in np.round(nodes):
+        if ([0,1] == cl[:2]).all():
+            red01.append(cl)
+    red01 = np.array(red01)
+    red01_unique = np.unique(red01, axis=0)
     
-    black00_0 = np.round(nodes).reshape(100,100,7)[40:50,85:95,:]
-    black00_1 = np.round(nodes).reshape(100,100,7)[0:10,0:10,:]
+    green10 = []
+    for cl in np.round(nodes):
+        if ([1,0] == cl[:2]).all():
+            green10.append(cl)
+    green10 = np.array(green10)
+    green10_unique = np.unique(green10, axis=0)
     
-    red01_0 = np.round(nodes).reshape(100,100,7)[0:10,50:60,:]
-    red01_1 = np.round(nodes).reshape(100,100,7)[0:10,30:40,:]
-    
-    green10_1 = np.round(nodes).reshape(100,100,7)[40:50,30:40,:]
-    green10_0 = np.round(nodes).reshape(100,100,7)[40:50,30:40,:]
-    
-    blue11_0 = np.round(nodes).reshape(100,100,7)[70:80,89:99,:]
-    blue11_1 = np.round(nodes).reshape(100,100,7)[89:99,30:40,:]
-    
-    black00_0 = np.unique(black00_0.reshape(100,7),axis=0)
-    black00_1 = np.unique(black00_1.reshape(100,7),axis=0)
-    
-    red01_0 = np.unique(red01_0.reshape(100,7),axis=0)
-    red01_1 = np.unique(red01_1.reshape(100,7),axis=0)
-    
-    green10_0 = np.unique(green10_0.reshape(100,7),axis=0)
-    green10_1 = np.unique(green10_1.reshape(100,7),axis=0)
-    
-    blue11_0 = np.unique(blue11_0.reshape(100,7),axis=0)
-    blue11_1 = np.unique(blue11_1.reshape(100,7),axis=0)
-    
-    red01_bound = np.round(nodes).reshape(100,100,7)[0:30,40:50,:]
-    green10_bound = np.round(nodes).reshape(100,100,7)[50:55,0:15,:]
-    blue11_bound = np.round(nodes).reshape(100,100,7)[89:99,10:15,:]
-    
-    red01_bound = np.unique(red01_bound.reshape(300,7), axis=0)
-    green10_bound = np.unique(green10_bound.reshape(75,7), axis=0)
-    blue11_bound = np.unique(blue11_bound.reshape(50,7), axis=0)
+    blue11 = []
+    for cl in np.round(nodes):
+        if ([1,1] == cl[:2]).all():
+            blue11.append(cl)
+    blue11 = np.array(blue11)
+    blue11_unique = np.unique(blue11, axis=0)

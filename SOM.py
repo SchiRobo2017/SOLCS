@@ -41,6 +41,7 @@ class SOM():
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
             
+            #caution: 行動を更新し忘れてない?
             self.nodes[:,[0,1,2,-1]] +=  L * S[:, np.newaxis] * (teacher[[0,1,2,-1]] - self.nodes[:,[0,1,2,-1]])#teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
             #self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
             
@@ -50,11 +51,19 @@ class SOM():
         print("training has finished")
         return self.nodes
 
-    def mapping(self, mappingDataList):
+    def mapping(self, mappingDataList, isRounded=False):
+        tmpNodes = self.nodes
+        
+        if isRounded == True:
+            self.nodes = np.round(self.nodes)
+            
         mapped = np.full((self.N, self.N, self.teachers.shape[1]), -1)
         for i, cl in enumerate(mappingDataList):
             idx = self._best_matching_unit(cl)
             mapped[idx] = cl
+            
+        self.nodes = tmpNodes
+        
         return mapped.reshape(self.N*self.N, self.teachers.shape[1])
     
     def _distance(self, x, axis = 1): #usage: distance(a-b)
@@ -156,11 +165,13 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
             addBits = None
             ansBit = None
             if cl[0] != -1:
+                #todo: このフローはgetAns（）で置き換えられる
                 addBitsArray = cl[:k]
                 refBitsArray = cl[k:-1]
                 addBits = [str(int(i)) for i in addBitsArray]
                 addBits = "".join(addBits)
-                ansBit = refBitsArray[int(addBits,2)]
+                #ansBit = refBitsArray[int(addBits,2)] #正解行動
+                ansBit = cl[-1] #SOMが獲得した正解
 
             if addBits=="00": #黒
                 if ansBit == 1:
@@ -213,8 +224,9 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
 
 class Main():
     def __init__(self):
-        self.seed_teacher = 10
-        self.seed_train = 10
+        #caution: 中間発表の結果はteacher=10, seedはSOM初期梶にNone渡し
+        self.seed_teacher = 12 #入力データseed
+        self.seed_train = 10 #マップ初期化シード
         self.N = 100
         self.head = 3
         self.k = 2
@@ -225,13 +237,13 @@ class Main():
         self.num_teachers = 10000 #default=10000 収束する   
         
         self.dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-        self.dirStr_result = "exp_data\\seed" + str(self.seed_train) #todo:命名規則の統一(適当に名前つけたので)
+        self.dirStr_result = "exp_data\\seed" + str(self.seed_teacher) #todo:命名規則の統一(適当に名前つけたので)
         os.makedirs(self.dirStr_result ,exist_ok=True)
             
         self.teachers = generateMUXNodes(seed=self.seed_teacher, k=2, includeAns=self.includeAns,
                                     num_teachers=self.num_teachers)
         
-        self.som = SOM(self.teachers, N=self.N, head=self.head, seed=None)
+        self.som = SOM(self.teachers, N=self.N, head=self.head, seed=seed_train)
 
     def main(self):
         self.som.train() #som.nodes.shape = (N*N=100*100, bits=7)
@@ -272,7 +284,7 @@ if __name__ == "__main__":
     """
     Showing map
     """
-    seed_train = 10 #hack:Mainで定義してるけどここで使えないのでもう一回定義
+    seed_train = main.seed_train #hack:Mainで定義してるけどここで使えないのでもう一回定義
     dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     dirStr_result = "exp_data\\seed" + str(seed_train) #todo:命名規則の統一(適当に名前つけたので)    
     
@@ -355,8 +367,8 @@ if __name__ == "__main__":
                 "\\map after learning coloerd by address and act" 
                 + dt_now)
     
-    plt.show()
-
+    main.som.head = None
+    
     #mappingDataList = np.array(generateMUXNodes(100,includeAns=True))
     mappingDataSequencial = []
     for i in range(0,64):
@@ -370,17 +382,37 @@ if __name__ == "__main__":
         cl.append(getAns(cl))
     
     mappingDataSequencial = np.array(mappingDataSequencial).reshape(len(mappingDataSequencial),len(mappingDataSequencial[0]))
-
-    main.som.head = None
+        
     mapped = main.som.mapping(mappingDataSequencial)
     
     mappedColored = getColoredNodes(mapped, color="colored")
-    
+
     plt.figure()
     plt.imshow(mappedColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
     plt.title("map of new classifier input")
     plt.savefig(dirStr_result +
                 "\\map of new classifier input" 
+                + dt_now)
+    
+    mappingDataSequencial_000 = []
+    for i in range(0,8):
+        mappingDataSequencial_000.append(str(bin(i))[2:].zfill(6))
+        
+    mappingDataSequencial_000 = [list(x) for x in mappingDataSequencial_000]
+    
+    for i, row in enumerate(mappingDataSequencial_000):
+        mappingDataSequencial_000[i] = [int(x) for x in row]
+        mappingDataSequencial_000[i].append(1)
+        
+    mapped = main.som.mapping(mappingDataSequencial_000, isRounded = True)
+    
+    mappedColored = getColoredNodes(mapped, color="colored")
+    
+    plt.figure()
+    plt.imshow(mappedColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
+    plt.title("map of incorrect classifier")
+    plt.savefig(dirStr_result +
+                "\\map of incorrect classifier" 
                 + dt_now)
     
     plt.show()

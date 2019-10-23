@@ -11,6 +11,7 @@ import datetime
 import os
 import math
 import pickle
+import SOLCSConfig as conf
 
 class SOM():
     def __init__(self, teachers, N, head=None, seed=None):
@@ -162,12 +163,13 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     coloredNodes = []
     if color=="colored":
         for cl in nodes:
+            
+            #hack: このifブロックは必要ないかも
             addBits = None
             ansBit = None
             if cl[0] != -1:
-                #todo: このフローはgetAns（）で置き換えられる
                 addBitsArray = cl[:k]
-                refBitsArray = cl[k:-1]
+                #refBitsArray = cl[k:-1]
                 addBits = [str(int(i)) for i in addBitsArray]
                 addBits = "".join(addBits)
                 #ansBit = refBitsArray[int(addBits,2)] #正解行動
@@ -225,7 +227,7 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
 class Main():
     def __init__(self):
         #caution: 中間発表の結果はteacher=10, seedはSOM初期梶にNone渡し
-        self.seed_teacher = 12 #入力データseed
+        self.seed_teacher = 10 #入力データseed
         self.seed_train = 10 #マップ初期化シード
         self.N = 100
         self.head = 3
@@ -243,7 +245,7 @@ class Main():
         self.teachers = generateMUXNodes(seed=self.seed_teacher, k=2, includeAns=self.includeAns,
                                     num_teachers=self.num_teachers)
         
-        self.som = SOM(self.teachers, N=self.N, head=self.head, seed=seed_train)
+        self.som = SOM(self.teachers, N=self.N, head=self.head, seed=None)
 
     def main(self):
         self.som.train() #som.nodes.shape = (N*N=100*100, bits=7)
@@ -403,6 +405,8 @@ if __name__ == "__main__":
     for i, row in enumerate(mappingDataSequencial_000):
         mappingDataSequencial_000[i] = [int(x) for x in row]
         mappingDataSequencial_000[i].append(1)
+        
+    mappingDataSequencial_000 = np.delete(mappingDataSequencial_000,5,0)
         
     mapped = main.som.mapping(mappingDataSequencial_000, isRounded = True)
     

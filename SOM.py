@@ -246,7 +246,7 @@ if __name__ == "__main__":
     map objects for showing
     """
     nodes = main.som.nodes
-    #N = int(math.sqrt(nodes.shape[0]))
+
     #iniNodes = None #colored initial nodes with bits2decimal-scale
     #iniNodesColored = None #colored initiol nodes rounded
     #iniCorrectActNodes = None #correct action nodes
@@ -264,102 +264,11 @@ if __name__ == "__main__":
     afterNodesSeparated = afterNodesRounded.copy()
     afterNodesColored = getColoredNodes(np.round(nodes), color="colored")        
     
-
     """
     Showing map
     """
     dt_now = conf.dt_now()
     dirStr_result = conf.dirStr_result    
-    
-    """
-    #plt.figure()
-    #plt.imshow(iniCorrectActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
-    #plt.title("initial map of actions")
-    #plt.savefig(dirStr_result + "\\initial map of actions.png")
-    
-    #plt.figure()
-    #plt.imshow(iniNodes, cmap="gray", vmin=0, vmax=63, interpolation="none")
-    #plt.title("initial map of condition by 64 scale")
-    #plt.savefig(dirStr_result + str(seed) + "\\initial map of condition by 64 scale")
-    
-    #plt.figure()
-    #plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
-    #plt.title("initial map colored by address bit")
-    #plt.savefig(dirStr_result + "\\initial map colored by address bit")
-    """
-    
-    """
-    plt.figure()
-    plt.imshow(actNodesR, cmap="gray", vmin=0, vmax=1,
-               interpolation="none")
-    plt.title("map of action part after leaning(continuous value)")
-    plt.savefig(dirStr_result + 
-                "\\map of action part after leaning(countinuous value)")
-    """
-    
-    plt.figure()
-    plt.imshow(actNodes, cmap="gray", vmin=0, vmax=1,
-               interpolation="none")
-    plt.title("map of action part after leaning")
-    plt.savefig(dirStr_result +
-                "\\map of action part after leaning" 
-                + dt_now)
-    
-    plt.figure()
-    plt.imshow(correctActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
-    plt.title("map of correct action part after leaning")
-    plt.savefig(dirStr_result +
-                "\\map of correct action part after leaning"
-                + dt_now)
-
-    plt.figure()
-    plt.imshow(afterNodesRounded_hamming, cmap="gray", vmin=0, vmax=5, interpolation="none")
-    plt.title("map of condition part after learning scaled by Hamming distance")
-    plt.colorbar()
-    plt.savefig(dirStr_result +
-                "\\map of condition part after learning scaled by Hamming distance"
-                + dt_now)
-    
-    plt.figure()
-    plt.imshow(afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
-    plt.title("map of condition part after learning")
-    plt.colorbar()
-    plt.savefig(dirStr_result +
-                "\\map of condition part after learning"
-                + dt_now)
-    
-    plt.figure()
-    plt.imshow(afterNodesReverse , cmap="gray", vmin=0, vmax=63, interpolation="none")
-    plt.title("map of condition part after learning(reversed value)")
-    plt.colorbar()
-    plt.savefig(dirStr_result +
-                "\\map of condition part after learning(reversed value)" 
-                + dt_now)
-    
-    #afterNodesSeparatedの値を行動の0,1に応じて色分け
-    for i, row in enumerate(actNodes): #debug: correctActNodesでは正解行動に応じtえ色分けされてしまう
-        for j, ans in enumerate(row):
-            if ans == 1.0:
-                None
-            elif ans == 0.0:
-                #val = afterNodesSeparated[i,j]
-                #afterNodesSeparated[i,j] = -val
-                afterNodesSeparated[i,j] = -afterNodesSeparated[i,j]
-                
-    plt.figure()
-    plt.imshow(afterNodesSeparated, cmap="PuOr", vmin=-64, vmax=63, interpolation="none")
-    plt.title("map of condition part separated by action")
-    plt.colorbar()
-    plt.savefig(dirStr_result +
-                "\\map of condition part separated by action" 
-                + dt_now)
-    
-    plt.figure()
-    plt.imshow(afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
-    plt.title("map after learning coloerd by address and act")
-    plt.savefig(dirStr_result +
-                "\\map after learning coloerd by address and act" 
-                + dt_now)
     
     #全分類子のマッピング
     main.som.head = None
@@ -415,34 +324,3 @@ if __name__ == "__main__":
                 + dt_now)
     
     plt.show()
-    
-    """
-    classifiers each of adress part or bound data on map
-    """
-    black00 = []
-    for cl in np.round(nodes):
-        if ([0,0] == cl[:2]).all():
-            black00.append(cl)
-    black00 = np.array(black00)
-    black00_unique = np.unique(black00, axis=0)
-
-    red01 = []
-    for cl in np.round(nodes):
-        if ([0,1] == cl[:2]).all():
-            red01.append(cl)
-    red01 = np.array(red01)
-    red01_unique = np.unique(red01, axis=0)
-    
-    green10 = []
-    for cl in np.round(nodes):
-        if ([1,0] == cl[:2]).all():
-            green10.append(cl)
-    green10 = np.array(green10)
-    green10_unique = np.unique(green10, axis=0)
-    
-    blue11 = []
-    for cl in np.round(nodes):
-        if ([1,1] == cl[:2]).all():
-            blue11.append(cl)
-    blue11 = np.array(blue11)
-    blue11_unique = np.unique(blue11, axis=0)

@@ -7,7 +7,6 @@ Created on Wed Jul 24 15:36:50 2019
 
 import numpy as np
 import matplotlib.pyplot as plt
-import datetime
 import os
 import math
 import pickle
@@ -150,12 +149,11 @@ def getAns(bitArray, k=2):
 #act含む/含まない両方対応
 def getAnsNodes(nodes, k=2): #nodes.shape must be [N*N, bits]
     ansNodes = []
-    N = int(math.sqrt(nodes.shape[0])) #edge length of the map
     for cl in nodes:
         ansNodes.append(getAns(cl))
             
     ansNodes = np.array(ansNodes)
-    return ansNodes.reshape(N, N)
+    return ansNodes.reshape(conf.N, conf.N)
 
 def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     Max = k + k**2
@@ -163,8 +161,6 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     coloredNodes = []
     if color=="colored":
         for cl in nodes:
-            
-            #hack: このifブロックは必要ないかも
             addBits = None
             ansBit = None
             if cl[0] != -1:
@@ -203,9 +199,9 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     
     elif color == "bits-scale":
         for cl in nodes:        
-            coloredNodes.append(np.sum(cl)/Max)
+            coloredNodes.append(np.sum(cl[:-1])/Max)
             
-        coloredNodes = np.array(coloredNodes, dtype = np.uint8)
+        coloredNodes = np.array(coloredNodes)
         return coloredNodes.reshape(N, N)
     elif color == "bits2decimal-scale":
         for cl in nodes:
@@ -226,32 +222,16 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
 
 class Main():
     def __init__(self):
-        #caution: 中間発表の結果はteacher=10, seedはSOM初期梶にNone渡し
-        self.seed_teacher = 10 #入力データseed
-        self.seed_train = 10 #マップ初期化シード
-        self.N = 100
-        self.head = 3
-        self.k = 2
-        self.includeAns = True
-        self.bits = self.k + 2**self.k
-        if self.includeAns==True:
-            self.bits+=1
-        self.num_teachers = 10000 #default=10000 収束する   
-        
-        self.dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-        self.dirStr_result = "exp_data\\seed" + str(self.seed_teacher) #todo:命名規則の統一(適当に名前つけたので)
-        os.makedirs(self.dirStr_result ,exist_ok=True)
-            
-        self.teachers = generateMUXNodes(seed=self.seed_teacher, k=2, includeAns=self.includeAns,
-                                    num_teachers=self.num_teachers)
-        
-        self.som = SOM(self.teachers, N=self.N, head=self.head, seed=None)
+        os.makedirs(conf.dirStr_result ,exist_ok=True)            
+        self.teachers = generateMUXNodes(seed=conf.seed_teacher, k=conf.k, includeAns=conf.includeAns,
+                                    num_teachers=conf.num_teachers)        
+        self.som = SOM(self.teachers, N=conf.N, head=conf.head, seed=None)
 
     def main(self):
         self.som.train() #som.nodes.shape = (N*N=100*100, bits=7)
         
         #結果をpickleに保存
-        with open(self.dirStr_result + "\\" + "nodes.bin", "wb") as nodes:
+        with open(conf.dirStr_result + "\\" + "nodes.bin", "wb") as nodes:
             pickle.dump(self.som.nodes, nodes)        
 
         #how to load
@@ -266,17 +246,19 @@ if __name__ == "__main__":
     map objects for showing
     """
     nodes = main.som.nodes
-    N = int(math.sqrt(nodes.shape[0]))
+    #N = int(math.sqrt(nodes.shape[0]))
     #iniNodes = None #colored initial nodes with bits2decimal-scale
     #iniNodesColored = None #colored initiol nodes rounded
     #iniCorrectActNodes = None #correct action nodes
-    actNodesRealNum = nodes[:,-1].reshape(N, N)
+    actNodesRealNum = nodes[:,-1].reshape(conf.N, conf.N)
     actNodes = np.round(actNodesRealNum)
     correctActNodes = getAnsNodes(np.round(nodes))
+    afterNodesRounded_hamming = getColoredNodes(np.round(nodes),
+                                        color="bits-scale")
     afterNodesRounded = getColoredNodes(np.round(nodes),
                                         color="bits2decimal-scale")
     
-    afterNodesReverse = np.round(nodes)[:,0:-1]
+    afterNodesReverse = np.round(nodes)[:,0:-1] #get 6bit nodes
     afterNodesReverse = getColoredNodes(afterNodesReverse[:,::-1], color="bits2decimal-scale")
     
     afterNodesSeparated = afterNodesRounded.copy()
@@ -286,10 +268,10 @@ if __name__ == "__main__":
     """
     Showing map
     """
-    seed_train = main.seed_train #hack:Mainで定義してるけどここで使えないのでもう一回定義
-    dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-    dirStr_result = "exp_data\\seed" + str(seed_train) #todo:命名規則の統一(適当に名前つけたので)    
+    dt_now = conf.dt_now()
+    dirStr_result = conf.dirStr_result    
     
+    """
     #plt.figure()
     #plt.imshow(iniCorrectActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
     #plt.title("initial map of actions")
@@ -304,6 +286,7 @@ if __name__ == "__main__":
     #plt.imshow(iniNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
     #plt.title("initial map colored by address bit")
     #plt.savefig(dirStr_result + "\\initial map colored by address bit")
+    """
     
     """
     plt.figure()
@@ -328,6 +311,14 @@ if __name__ == "__main__":
     plt.savefig(dirStr_result +
                 "\\map of correct action part after leaning"
                 + dt_now)
+
+    plt.figure()
+    plt.imshow(afterNodesRounded_hamming, cmap="gray", vmin=0, vmax=5, interpolation="none")
+    plt.title("map of condition part after learning scaled by Hamming distance")
+    plt.colorbar()
+    plt.savefig(dirStr_result +
+                "\\map of condition part after learning scaled by Hamming distance"
+                + dt_now)
     
     plt.figure()
     plt.imshow(afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
@@ -346,13 +337,14 @@ if __name__ == "__main__":
                 + dt_now)
     
     #afterNodesSeparatedの値を行動の0,1に応じて色分け
-    for i, row in enumerate(correctActNodes):
+    for i, row in enumerate(actNodes): #debug: correctActNodesでは正解行動に応じtえ色分けされてしまう
         for j, ans in enumerate(row):
             if ans == 1.0:
                 None
             elif ans == 0.0:
-                val = afterNodesSeparated[i,j]
-                afterNodesSeparated[i,j] = -val
+                #val = afterNodesSeparated[i,j]
+                #afterNodesSeparated[i,j] = -val
+                afterNodesSeparated[i,j] = -afterNodesSeparated[i,j]
                 
     plt.figure()
     plt.imshow(afterNodesSeparated, cmap="PuOr", vmin=-64, vmax=63, interpolation="none")
@@ -364,11 +356,12 @@ if __name__ == "__main__":
     
     plt.figure()
     plt.imshow(afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
-    plt.title("map after learning coloerd by address bit")
+    plt.title("map after learning coloerd by address and act")
     plt.savefig(dirStr_result +
                 "\\map after learning coloerd by address and act" 
                 + dt_now)
     
+    #全分類子のマッピング
     main.som.head = None
     
     #mappingDataList = np.array(generateMUXNodes(100,includeAns=True))
@@ -384,18 +377,20 @@ if __name__ == "__main__":
         cl.append(getAns(cl))
     
     mappingDataSequencial = np.array(mappingDataSequencial).reshape(len(mappingDataSequencial),len(mappingDataSequencial[0]))
-        
-    mapped = main.som.mapping(mappingDataSequencial)
     
-    mappedColored = getColoredNodes(mapped, color="colored")
+    #実数ノードに全入力を曝露したデータ
+    nodes_mapped_new_input = main.som.mapping(mappingDataSequencial)
+    
+    nodes_mapped_new_input_colored = getColoredNodes(nodes_mapped_new_input, color="colored")
 
     plt.figure()
-    plt.imshow(mappedColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
+    plt.imshow(nodes_mapped_new_input_colored, cmap="gray", vmin=0, vmax=255, interpolation="none")
     plt.title("map of new classifier input")
     plt.savefig(dirStr_result +
                 "\\map of new classifier input" 
                 + dt_now)
     
+    #00‐1領域に現れた不正解分類子の分析
     mappingDataSequencial_000 = []
     for i in range(0,8):
         mappingDataSequencial_000.append(str(bin(i))[2:].zfill(6))
@@ -408,12 +403,12 @@ if __name__ == "__main__":
         
     mappingDataSequencial_000 = np.delete(mappingDataSequencial_000,5,0)
         
-    mapped = main.som.mapping(mappingDataSequencial_000, isRounded = True)
+    nodes_mapped_incorrect_input = main.som.mapping(mappingDataSequencial_000, isRounded = True)
     
-    mappedColored = getColoredNodes(mapped, color="colored")
+    nodes_mapped_incorrect_input_colored = getColoredNodes(nodes_mapped_incorrect_input, color="colored")
     
     plt.figure()
-    plt.imshow(mappedColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
+    plt.imshow(nodes_mapped_incorrect_input_colored, cmap="gray", vmin=0, vmax=255, interpolation="none")
     plt.title("map of incorrect classifier")
     plt.savefig(dirStr_result +
                 "\\map of incorrect classifier" 

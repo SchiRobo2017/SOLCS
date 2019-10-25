@@ -222,7 +222,7 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
 
 class Main():
     def __init__(self):
-        os.makedirs(conf.dirStr_result ,exist_ok=True)            
+        os.makedirs(conf.dirStr_result() ,exist_ok=True)            
         self.teachers = generateMUXNodes(seed=conf.seed_teacher, k=conf.k, includeAns=conf.includeAns,
                                     num_teachers=conf.num_teachers)        
         self.som = SOM(self.teachers, N=conf.N, head=conf.head, seed=None)
@@ -231,7 +231,7 @@ class Main():
         self.som.train() #som.nodes.shape = (N*N=100*100, bits=7)
         
         #結果をpickleに保存
-        with open(conf.dirStr_result + "\\" + "nodes.bin", "wb") as nodes:
+        with open(conf.dirStr_result() + "\\" + "nodes.bin", "wb") as nodes:
             pickle.dump(self.som.nodes, nodes)        
 
         #how to load

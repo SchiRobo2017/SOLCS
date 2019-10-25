@@ -17,8 +17,11 @@ bits = k + 2**k
 if includeAns==True:
     bits+=1
 num_teachers = 10000 #default=10000 収束する   
-dirStr_result = "exp_data\\seed" + str(seed_teacher)
+#dirStr_result = "exp_data\\seed" + str(seed_teacher) #seedが途中で変わったときに対応できない
+
+def dirStr_result(): #seedの動的変更に対応
+    return "exp_data\\seed" + str(seed_teacher)
+
 #dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S') #モジュールをロードした時刻
 def dt_now(): #この関数を呼び出した時刻
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-dirStr_result = "exp_data\\seed" + str(seed_teacher) #todo: 命名規則の統一　適当に命名

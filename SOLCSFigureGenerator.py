@@ -8,15 +8,14 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import SOM
-import SOLCSConfig as conf
 
 class FigureGenerater():
-    def __init__(self, resultDirStr):
-        self.resultDirStr = "exp_data\\" + resultDirStr
+    def __init__(self, resultDirStr=SOM.conf.dirStr_result()):
+        self.resultDirStr = resultDirStr
         with open(self.resultDirStr +  "\\nodes.bin", "rb") as nodes:
             self.nodes = pickle.load(nodes)        
         
-        self.actNodesRealNum = self.nodes[:,-1].reshape(conf.N, conf.N)
+        self.actNodesRealNum = self.nodes[:,-1].reshape(SOM.conf.N, SOM.conf.N)
         self.actNodes = np.round(self.actNodesRealNum)
         self.correctActNodes = SOM.getAnsNodes(np.round(self.nodes))
         self.afterNodesRounded_hamming = SOM.getColoredNodes(np.round(self.nodes),
@@ -30,12 +29,12 @@ class FigureGenerater():
         self.afterNodesSeparated = self.afterNodesRounded.copy()
         self.afterNodesColored = SOM.getColoredNodes(np.round(self.nodes), color="colored")        
     
-    def genFig(self):
+    def genFig(self, doesShow=True):
         """
         Showing map
         """
-        dt_now = conf.dt_now()
-        dirStr_result = conf.dirStr_result    
+        dt_now = SOM.conf.dt_now()
+        dirStr_result = SOM.conf.dirStr_result()
         
         """
         #plt.figure()
@@ -127,7 +126,8 @@ class FigureGenerater():
                     "\\map after learning coloerd by address and act" 
                     + dt_now)
         
-        plt.show()
+        if doesShow == True:
+            plt.show()
     
 """
         #全分類子のマッピング
@@ -190,3 +190,6 @@ class FigureGenerater():
 
         #plt.show()
         
+if __name__ == "__main__":
+    #FigureGenerater(default = seed10).genFig()
+    FigureGenerater().genFig()

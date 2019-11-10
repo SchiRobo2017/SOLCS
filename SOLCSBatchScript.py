@@ -7,10 +7,16 @@ Created on Fri Oct 25 16:00:02 2019
 
 import SOM
 import SOLCSFigureGenerator as fg
+import itertools
 
-for i in range(10):
-    print("seed", SOM.conf.seed_teacher, "started.")
+teacher = list(range(1,6))
+train = list(range(10,16))
+seeds = itertools.product(teacher, train)
+
+for te, tr in seeds:
+    SOM.conf.seed_teacher = te
+    SOM.conf.seed_train = tr
+    print("seed_teacher=", te, "seed_train=", tr)
     main = SOM.Main()
     main.main()
-    fg.FigureGenerater().genFig(doesShow=False)
-    SOM.conf.seed_teacher+=1
+    fg.FigureGenerater(dirStr_result = SOM.conf.dirStr_result()).genFig(doesShow=False)

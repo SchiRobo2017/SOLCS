@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 import SOM
 
 class FigureGenerater():
-    def __init__(self, resultDirStr=SOM.conf.dirStr_result()):
-        self.resultDirStr = resultDirStr
-        with open(self.resultDirStr +  "\\nodes.bin", "rb") as nodes:
+    def __init__(self, dirStr_result):
+        self.dirStr_result = dirStr_result
+        with open(self.dirStr_result +  "\\nodes.bin", "rb") as nodes:
             self.nodes = pickle.load(nodes)        
         
         self.actNodesRealNum = self.nodes[:,-1].reshape(SOM.conf.N, SOM.conf.N)
@@ -34,7 +34,6 @@ class FigureGenerater():
         Showing map
         """
         dt_now = SOM.conf.dt_now()
-        dirStr_result = SOM.conf.dirStr_result()
         
         """
         #plt.figure()
@@ -66,40 +65,44 @@ class FigureGenerater():
         plt.imshow(self.actNodes, cmap="gray", vmin=0, vmax=1,
                    interpolation="none")
         plt.title("map of action part after leaning")
-        plt.savefig(dirStr_result +
+        plt.savefig(self.dirStr_result +
                     "\\map of action part after leaning" 
                     + dt_now)
         
         plt.figure()
         plt.imshow(self.correctActNodes, cmap="gray", vmin=0, vmax=1, interpolation="none")
         plt.title("map of correct action part after leaning")
-        plt.savefig(dirStr_result +
+        plt.savefig(self.dirStr_result +
                     "\\map of correct action part after leaning"
                     + dt_now)
     
+        """
         plt.figure()
         plt.imshow(self.afterNodesRounded_hamming, cmap="gray", vmin=0, vmax=5, interpolation="none")
         plt.title("map of condition part after learning scaled by Hamming distance")
         plt.colorbar()
-        plt.savefig(dirStr_result +
+        plt.savefig(self.dirStr_result +
                     "\\map of condition part after learning scaled by Hamming distance"
                     + dt_now)
+        """
         
         plt.figure()
         plt.imshow(self.afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
         plt.title("map of condition part after learning")
         plt.colorbar()
-        plt.savefig(dirStr_result +
+        plt.savefig(self.dirStr_result +
                     "\\map of condition part after learning"
                     + dt_now)
         
+        """
         plt.figure()
         plt.imshow(self.afterNodesReverse , cmap="gray", vmin=0, vmax=63, interpolation="none")
         plt.title("map of condition part after learning(reversed value)")
         plt.colorbar()
-        plt.savefig(dirStr_result +
+        plt.savefig(self.dirStr_result +
                     "\\map of condition part after learning(reversed value)" 
                     + dt_now)
+        """
         
         #afterNodesSeparatedの値を行動の0,1に応じて色分け
         for i, row in enumerate(self.actNodes): #debug: correctActNodesでは正解行動に応じtえ色分けされてしまう
@@ -111,25 +114,24 @@ class FigureGenerater():
                     #afterNodesSeparated[i,j] = -val
                     self.afterNodesSeparated[i,j] = -self.afterNodesSeparated[i,j]
                     
+        """
         plt.figure()
         plt.imshow(self.afterNodesSeparated, cmap="PuOr", vmin=-64, vmax=63, interpolation="none")
         plt.title("map of condition part separated by action")
         plt.colorbar()
-        plt.savefig(dirStr_result +
+        plt.savefig(self.dirStr_result +
                     "\\map of condition part separated by action" 
                     + dt_now)
+        """
         
         plt.figure()
         plt.imshow(self.afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")
         plt.title("map after learning coloerd by address and act")
-        plt.savefig(dirStr_result +
+        plt.savefig(self.dirStr_result +
                     "\\map after learning coloerd by address and act" 
                     + dt_now)
-        
-        if doesShow == True:
-            plt.show()
     
-"""
+        """
         #全分類子のマッピング
         main.som.head = None
         
@@ -146,9 +148,9 @@ class FigureGenerater():
             cl.append(getAns(cl))
         
         mappingDataSequencial = np.array(mappingDataSequencial).reshape(len(mappingDataSequencial),len(mappingDataSequencial[0]))
-"""
+        """
 
-"""        
+        """        
         #実数ノードに全入力を曝露したデータ
         nodes_mapped_new_input = main.som.mapping(mappingDataSequencial)
         
@@ -160,36 +162,38 @@ class FigureGenerater():
         plt.savefig(dirStr_result +
                     "\\map of new classifier input" 
                     + dt_now)
-"""   
+        """   
    
-"""  
-        #00‐1領域に現れた不正解分類子の分析
-        mappingDataSequencial_000 = []
-        for i in range(0,8):
-            mappingDataSequencial_000.append(str(bin(i))[2:].zfill(6))
-            
-        mappingDataSequencial_000 = [list(x) for x in mappingDataSequencial_000]
+  
+        #正解 -> 0
+        #誤り:正解が1で獲得が0　-> 1
+        #誤り:正解が0で獲得が1 -> -1
+        #となるノードを取得
+        nodes_incorrect = self.actNodes - self.correctActNodes
         
-        for i, row in enumerate(mappingDataSequencial_000):
-            mappingDataSequencial_000[i] = [int(x) for x in row]
-            mappingDataSequencial_000[i].append(1)
-            
-        mappingDataSequencial_000 = np.delete(mappingDataSequencial_000,5,0)
-            
-        nodes_mapped_incorrect_input = main.som.mapping(mappingDataSequencial_000, isRounded = True)
+        nodes_tmp = np.round(self.nodes)
         
-        nodes_mapped_incorrect_input_colored = getColoredNodes(nodes_mapped_incorrect_input, color="colored")
-        
+        for i, val in enumerate(nodes_incorrect.reshape(10000)):
+            if val == 0:
+                #white
+                nodes_tmp[i] = [-1,-1,-1,-1,-1,-1,-1]
+            elif val == 1:
+                continue
+            elif val == -1:
+                continue
+            else:
+                print("reached else block")
+
         plt.figure()
-        plt.imshow(nodes_mapped_incorrect_input_colored, cmap="gray", vmin=0, vmax=255, interpolation="none")
+        plt.imshow(SOM.getColoredNodes(nodes_tmp, color="colored") , cmap="gray", vmin=-1, vmax=1, interpolation="none")
         plt.title("map of incorrect classifier")
-        plt.savefig(dirStr_result +
+        plt.savefig(self.dirStr_result +
                     "\\map of incorrect classifier" 
                     + dt_now)
-"""
 
-        #plt.show()
+        if doesShow == True:
+            plt.show()
         
 if __name__ == "__main__":
     #FigureGenerater(default = seed10).genFig()
-    FigureGenerater().genFig()
+    FigureGenerater("exp_data\\teacher10_train10actbit_no_update").genFig()

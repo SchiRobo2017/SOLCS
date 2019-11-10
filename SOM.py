@@ -40,8 +40,7 @@ class SOM():
             d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuのmap上での距離
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
-            
-            #caution: 行動を更新し忘れてない?
+                                                                                            
             self.nodes[:,[0,1,2,-1]] +=  L * S[:, np.newaxis] * (teacher[[0,1,2,-1]] - self.nodes[:,[0,1,2,-1]])#teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
             #self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
             
@@ -59,7 +58,7 @@ class SOM():
             
         mapped = np.full((self.N, self.N, self.teachers.shape[1]), -1)
         for i, cl in enumerate(mappingDataList):
-            idx = self._best_matching_unit(cl)
+            idx = self._best_matching_unit(cl, allIdx=True)
             mapped[idx] = cl
             
         self.nodes = tmpNodes
@@ -81,7 +80,7 @@ class SOM():
         print(calc_dist(x))
         return calc_dist(x)
         
-    def _best_matching_unit(self, teacher):
+    def _best_matching_unit(self, teacher, allIdx=False):
         if self.head == None:
             norms = np.linalg.norm(self.nodes[:, :self.head] - teacher[:self.head], axis=1)
         else: #self.head != None
@@ -90,7 +89,13 @@ class SOM():
             teacher = teacher[idx]
             norms = np.linalg.norm(nodes - teacher, axis=1)
 
-        bmu = np.argmin(norms) #normsを1次元にreshapeしたときのインデックス
+        if allIdx == False:
+            #最初に見つかったインデックスを一つだけ返す
+            bmu = np.argmin(norms) #normsを1次元にreshapeしたときのインデックス
+        else:
+            #全てのインデックスを返す
+            bmu = np.where(norms == norms.min())
+            
         return np.unravel_index(bmu,(self.N, self.N)) #N*N行列のargmin
 
     def _neighbourhood(self, t):#neighbourhood radious
@@ -159,6 +164,8 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     Max = k + k**2
     N = int(math.sqrt(nodes.shape[0])) #edge length of the map
     coloredNodes = []
+    
+    #アドレスビットと行動で色分け
     if color=="colored":
         for cl in nodes:
             addBits = None
@@ -225,14 +232,14 @@ class Main():
         os.makedirs(conf.dirStr_result() ,exist_ok=True)            
         self.teachers = generateMUXNodes(seed=conf.seed_teacher, k=conf.k, includeAns=conf.includeAns,
                                     num_teachers=conf.num_teachers)        
-        self.som = SOM(self.teachers, N=conf.N, head=conf.head, seed=None)
+        self.som = SOM(self.teachers, N=conf.N, head=conf.head, seed=conf.seed_train)
 
     def main(self):
         self.som.train() #som.nodes.shape = (N*N=100*100, bits=7)
         
         #結果をpickleに保存
         with open(conf.dirStr_result() + "\\" + "nodes.bin", "wb") as nodes:
-            pickle.dump(self.som.nodes, nodes)        
+                  pickle.dump(self.som.nodes, nodes)        
 
         #how to load
         #with open("nodes.bin", "rb") as nodes:
@@ -268,7 +275,7 @@ if __name__ == "__main__":
     Showing map
     """
     dt_now = conf.dt_now()
-    dirStr_result = conf.dirStr_result    
+    dirStr_result = conf.dirStr_result()   
     
     #全分類子のマッピング
     main.som.head = None

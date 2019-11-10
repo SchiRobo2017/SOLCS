@@ -11,9 +11,11 @@ import os
 import math
 import pickle
 import SOLCSConfig as conf
+import SOLCSFigureGenerator as fg
+#from numba.decorators import jit
 
 class SOM():
-    def __init__(self, teachers, N, head=None, seed=None):
+    def __init__(self, teachers, N, head=None, seed=None, doesErrorCorrect = False):
         #seed setting
         if seed==None:
             None
@@ -24,12 +26,11 @@ class SOM():
         self.n_teacher = self.teachers.shape[0]
         self.head = head
         self.N = N
+        self.doesErrorCorrect = doesErrorCorrect
         
         x, y = np.meshgrid(range(self.N), range(self.N)) #格子点の生成
-        self.c = np.hstack((y.flatten()[:, np.newaxis],
-                            x.flatten()[:, np.newaxis])) #座標の配列に変換
-        self.nodes = np.round(np.random.rand(self.N*self.N,
-                                    self.teachers.shape[1])) #初期マップの生成
+        self.c = np.hstack((y.flatten()[:, np.newaxis],x.flatten()[:, np.newaxis])) #座標の配列に変換
+        self.nodes = np.round(np.random.rand(self.N*self.N, self.teachers.shape[1])) #初期マップの生成
         self.ims = []
 
     def train(self):
@@ -43,6 +44,10 @@ class SOM():
                                                                                             
             self.nodes[:,[0,1,2,-1]] +=  L * S[:, np.newaxis] * (teacher[[0,1,2,-1]] - self.nodes[:,[0,1,2,-1]])#teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
             #self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
+            
+            #誤り訂正　正解行動を付与
+            if self.doesErrorCorrect:
+                self.nodes[:,-1] = getAnsNodes(np.round(self.nodes)).reshape(self.N*self.N)
             
             if i%(len(self.teachers)/100*10)==0:
                 print("progress : " + str(i/len(self.teachers)*100) + "%")
@@ -141,24 +146,28 @@ def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = Fal
 
 def getAns(bitArray, k=2):
     addbit = bitArray[:k]
-    refbit = bitArray[k:]
-    cal = ""
+    #refbit = bitArray[k:]
+    #cal = ""
     #正解行動
-    for x in range(len(addbit)):
-        cal += str(int(addbit[x]))
+    #for x in range(len(addbit)):
+    #    cal += str(int(addbit[x]))
 
-    cal = int(cal,2)
-    ans = refbit[cal]
-    return ans
+    #cal = int(cal,2)
+    #ans = refbit[cal]
+    #return ans
+        
+    #return refbit[int(cal,2)]
+    return bitArray[k+int("".join([str(int(x)) for x in addbit]),2)]
 
 #act含む/含まない両方対応
 def getAnsNodes(nodes, k=2): #nodes.shape must be [N*N, bits]
-    ansNodes = []
-    for cl in nodes:
-        ansNodes.append(getAns(cl))
+    #ansNodes = []
+    #for cl in nodes:
+    #    ansNodes.append(getAns(cl))
             
-    ansNodes = np.array(ansNodes)
-    return ansNodes.reshape(conf.N, conf.N)
+    #ansNodes = np.array(ansNodes)
+    #return ansNodes.reshape(conf.N, conf.N)
+    return (np.array([getAns(cl) for cl in nodes])).reshape(conf.N, conf.N)
 
 def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     Max = k + k**2
@@ -230,9 +239,8 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
 class Main():
     def __init__(self):
         os.makedirs(conf.dirStr_result() ,exist_ok=True)            
-        self.teachers = generateMUXNodes(seed=conf.seed_teacher, k=conf.k, includeAns=conf.includeAns,
-                                    num_teachers=conf.num_teachers)        
-        self.som = SOM(self.teachers, N=conf.N, head=conf.head, seed=conf.seed_train)
+        self.teachers = generateMUXNodes(seed=conf.seed_teacher, k=conf.k, includeAns=conf.includeAns, num_teachers=conf.num_teachers)        
+        self.som = SOM(self.teachers, N=conf.N, head=conf.head, seed=conf.seed_train, doesErrorCorrect = conf.doesErrorCorrect)
 
     def main(self):
         self.som.train() #som.nodes.shape = (N*N=100*100, bits=7)
@@ -248,6 +256,9 @@ class Main():
 if __name__ == "__main__":
     main = Main()
     main.main()
+    fg.FigureGenerater(dirStr_result = conf.dirStr_result()).genFig()
+    
+    
     
     """
     map objects for showing
@@ -294,6 +305,7 @@ if __name__ == "__main__":
     
     mappingDataSequencial = np.array(mappingDataSequencial).reshape(len(mappingDataSequencial),len(mappingDataSequencial[0]))
     
+    """
     #実数ノードに全入力を曝露したデータ
     nodes_mapped_new_input = main.som.mapping(mappingDataSequencial)
     
@@ -305,8 +317,10 @@ if __name__ == "__main__":
     plt.savefig(dirStr_result +
                 "\\map of new classifier input" 
                 + dt_now)
+    """
     
     #00‐1領域に現れた不正解分類子の分析
+    """
     mappingDataSequencial_000 = []
     for i in range(0,8):
         mappingDataSequencial_000.append(str(bin(i))[2:].zfill(6))
@@ -329,5 +343,5 @@ if __name__ == "__main__":
     plt.savefig(dirStr_result +
                 "\\map of incorrect classifier" 
                 + dt_now)
-    
+    """
     plt.show()

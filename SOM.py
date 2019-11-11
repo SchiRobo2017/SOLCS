@@ -28,11 +28,17 @@ class SOM():
         self.N = N
         self.doesErrorCorrect = doesErrorCorrect
         
-        x, y = np.meshgrid(range(self.N), range(self.N)) #格子点の生成
-        self.c = np.hstack((y.flatten()[:, np.newaxis],x.flatten()[:, np.newaxis])) #座標の配列に変換
-        self.nodes = np.round(np.random.rand(self.N*self.N, self.teachers.shape[1])) #初期マップの生成
-        self.ims = []
-
+        #格子点の生成
+        x, y = np.meshgrid(range(self.N), range(self.N))
+        #座標の配列に変換
+        self.c = np.hstack((y.flatten()[:, np.newaxis],x.flatten()[:, np.newaxis]))
+        #初期マップの生成 caution:11月11日まで行動もランダムに与えていた！
+        self.nodes = np.round(np.random.rand(self.N*self.N, self.teachers.shape[1]))
+        
+        #正解行動の付与
+        for cl in self.nodes:
+            cl[-1] = getAns(cl)
+            
     def train(self):
         print("training has started.")
 
@@ -41,8 +47,11 @@ class SOM():
             d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuのmap上での距離
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
-                                                                                            
-            self.nodes[:,[0,1,2,-1]] +=  L * S[:, np.newaxis] * (teacher[[0,1,2,-1]] - self.nodes[:,[0,1,2,-1]])#teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
+            
+            #teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合                                                                                            
+            self.nodes[:,[0,1,2,-1]] +=  L * S[:, np.newaxis] * (teacher[[0,1,2,-1]] - self.nodes[:,[0,1,2,-1]])
+
+            #全ビット更新
             #self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
             
             #誤り訂正　正解行動を付与
@@ -118,7 +127,7 @@ class SOM():
         s = self._neighbourhood(t)
         return np.exp(-d**2/(2*s**2))            
             
-def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = False):
+def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = False, includeRewards = False):
     #seed setting
     if seed==None:
         None
@@ -140,6 +149,10 @@ def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = Fal
         #必要なら答えを付与
         if includeAns == True:
             teacher.append(getAns(teacher, k))
+            
+        #必要なら報酬を付与
+        if includeRewards == True:
+            teacher.append(getAns(teacher, k)*1000)
 
         teachers.append(teacher)
     return teachers
@@ -239,7 +252,7 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
 class Main():
     def __init__(self):
         os.makedirs(conf.dirStr_result() ,exist_ok=True)            
-        self.teachers = generateMUXNodes(seed=conf.seed_teacher, k=conf.k, includeAns=conf.includeAns, num_teachers=conf.num_teachers)        
+        self.teachers = generateMUXNodes(seed=conf.seed_teacher, k=conf.k, includeAns=conf.includeAns, num_teachers=conf.num_teachers, includeRewards = conf.includeRewards)        
         self.som = SOM(self.teachers, N=conf.N, head=conf.head, seed=conf.seed_train, doesErrorCorrect = conf.doesErrorCorrect)
 
     def main(self):

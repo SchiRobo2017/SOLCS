@@ -194,8 +194,8 @@ class FigureGenerater():
         if doesShow == True:
             plt.show()
             
-        print(str(SOM.conf.dirStr_result()), "saved")
+        print(self.dirStr_result, "saved")
         
 if __name__ == "__main__":
     #FigureGenerater(default = seed10).genFig()
-    FigureGenerater("exp_data\\teacher10_trainNone_error_corrected").genFig()
+    FigureGenerater("exp_data\\teacher10_trainNone_debug").genFig()

@@ -15,6 +15,7 @@ class FigureGenerater():
         with open(self.dirStr_result +  "\\nodes.bin", "rb") as nodes:
             self.nodes = pickle.load(nodes)        
         
+        #todo
         self.actNodesRealNum = self.nodes[:,-1].reshape(SOM.conf.N, SOM.conf.N)
         self.actNodes = np.round(self.actNodesRealNum)
         self.correctActNodes = SOM.getAnsNodes(np.round(self.nodes))
@@ -23,7 +24,9 @@ class FigureGenerater():
         self.afterNodesRounded = SOM.getColoredNodes(np.round(self.nodes),
                                         color="bits2decimal-scale")
     
+        #todo
         self.afterNodesReverse = np.round(self.nodes)[:,0:-1] #get 6bit nodes
+        #todo
         self.afterNodesReverse = SOM.getColoredNodes(self.afterNodesReverse[:,::-1], color="bits2decimal-scale")
     
         self.afterNodesSeparated = self.afterNodesRounded.copy()
@@ -198,4 +201,4 @@ class FigureGenerater():
         
 if __name__ == "__main__":
     #FigureGenerater(default = seed10).genFig()
-    FigureGenerater("exp_data\\teacher10_trainNone_debug").genFig()
+    FigureGenerater("exp_data\\teacher10_trainNone_debug").genFig() #hack: magic number

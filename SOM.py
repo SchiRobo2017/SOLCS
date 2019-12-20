@@ -6,13 +6,18 @@ Created on Wed Jul 24 15:36:50 2019
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import math
 import pickle
 import SOLCSConfig as conf
 import SOLCSFigureGenerator as fg
+from tqdm import tqdm
 #from numba.decorators import jit
+
+ADBIT00 = [0,1,2,-1]
+ADBIT01 = [0,1,3]
+ADBIT10 = [0,1,4]
+ADBIT11 = [0,1,5]
 
 class SOM():
     def __init__(self, teachers, N, head=None, seed=None, doesErrorCorrect = False):
@@ -35,31 +40,40 @@ class SOM():
         #初期マップの生成 caution:11月11日まで行動もランダムに与えていた！
         self.nodes = np.round(np.random.rand(self.N*self.N, self.teachers.shape[1]))
         
-        #正解行動の付与
+        #正解行動の付与 note:このブロックを消せば行動はランダムで与えられる
         for cl in self.nodes:
             cl[-1] = getAns(cl)
+            
+        #得点の付与
+        #for cl in self.nodes:
+        #    cl.append(1000*cl[-1])
             
     def train(self):
         print("training has started.")
 
-        for i, teacher in enumerate(self.teachers):
+        #hack
+        ADBIT = ADBIT00
+        for i, teacher in enumerate(tqdm(self.teachers)):
             bmu = self._best_matching_unit(teacher)
             d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuのmap上での距離
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
             
-            #teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合                                                                                            
-            self.nodes[:,[0,1,2,-1]] +=  L * S[:, np.newaxis] * (teacher[[0,1,2,-1]] - self.nodes[:,[0,1,2,-1]])
+            #teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
+            #todo:                                                                                            
+            self.nodes[:,ADBIT] +=  L * S[:, np.newaxis] * (teacher[ADBIT] - self.nodes[:,ADBIT])
 
             #全ビット更新
             #self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
             
             #誤り訂正　正解行動を付与
+            #todo
             if self.doesErrorCorrect:
-                self.nodes[:,-1] = getAnsNodes(np.round(self.nodes)).reshape(self.N*self.N)
-            
-            if i%(len(self.teachers)/100*10)==0:
-                print("progress : " + str(i/len(self.teachers)*100) + "%")
+                self.nodes[:,-1] = getAnsNodes(np.round(self.nodes)).reshape(conf.N*conf.N)
+                
+            #エントロピーの計算とプリント
+            #entropy = [inf] * 4
+            #entropy = entropy(nodes)
 
         print("training has finished")
         return self.nodes
@@ -69,7 +83,8 @@ class SOM():
         
         if isRounded == True:
             self.nodes = np.round(self.nodes)
-            
+        
+        #todo
         mapped = np.full((self.N, self.N, self.teachers.shape[1]), -1)
         for i, cl in enumerate(mappingDataList):
             idx = self._best_matching_unit(cl, allIdx=True)
@@ -98,9 +113,11 @@ class SOM():
         if self.head == None:
             norms = np.linalg.norm(self.nodes[:, :self.head] - teacher[:self.head], axis=1)
         else: #self.head != None
+            #todo
             idx = list(range(self.head)) + [-1]
             nodes = self.nodes[:,idx]
             teacher = teacher[idx]
+            #ここで1ビットだけ1000倍のオーダーだったらノルムにどう響く?
             norms = np.linalg.norm(nodes - teacher, axis=1)
 
         if allIdx == False:
@@ -125,7 +142,10 @@ class SOM():
     def _learning_radius(self, t, d):
         # d is distance from BMU
         s = self._neighbourhood(t)
-        return np.exp(-d**2/(2*s**2))            
+        return np.exp(-d**2/(2*s**2))
+
+    def _cond_entropy(nodes, adbit):
+        return None                 
             
 def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = False, includeRewards = False):
     #seed setting
@@ -148,17 +168,17 @@ def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = Fal
                 
         #必要なら答えを付与
         if includeAns == True:
-            teacher.append(getAns(teacher, k))
+            teacher.append(getAns(teacher))
             
         #必要なら報酬を付与
         if includeRewards == True:
-            teacher.append(getAns(teacher, k)*1000)
+            teacher.append(getAns(teacher)*1000)
 
         teachers.append(teacher)
     return teachers
 
-def getAns(bitArray, k=2):
-    addbit = bitArray[:k]
+def getAns(bitArray):
+    addbit = bitArray[:conf.k]
     #refbit = bitArray[k:]
     #cal = ""
     #正解行動
@@ -170,10 +190,10 @@ def getAns(bitArray, k=2):
     #return ans
         
     #return refbit[int(cal,2)]
-    return bitArray[k+int("".join([str(int(x)) for x in addbit]),2)]
+    return bitArray[conf.k+int("".join([str(int(x)) for x in addbit]),2)]
 
 #act含む/含まない両方対応
-def getAnsNodes(nodes, k=2): #nodes.shape must be [N*N, bits]
+def getAnsNodes(nodes): #nodes.shape must be [N*N, bits]
     #ansNodes = []
     #for cl in nodes:
     #    ansNodes.append(getAns(cl))
@@ -198,6 +218,7 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
                 addBits = [str(int(i)) for i in addBitsArray]
                 addBits = "".join(addBits)
                 #ansBit = refBitsArray[int(addBits,2)] #正解行動
+                #todo
                 ansBit = cl[-1] #SOMが獲得した正解
 
             if addBits=="00": #黒
@@ -232,6 +253,7 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
             
         coloredNodes = np.array(coloredNodes)
         return coloredNodes.reshape(N, N)
+
     elif color == "bits2decimal-scale":
         for cl in nodes:
             cljoined = [str(int(i)) for i in cl]
@@ -281,6 +303,7 @@ if __name__ == "__main__":
     #iniNodes = None #colored initial nodes with bits2decimal-scale
     #iniNodesColored = None #colored initiol nodes rounded
     #iniCorrectActNodes = None #correct action nodes
+    #todo
     actNodesRealNum = nodes[:,-1].reshape(conf.N, conf.N)
     actNodes = np.round(actNodesRealNum)
     correctActNodes = getAnsNodes(np.round(nodes))
@@ -289,7 +312,9 @@ if __name__ == "__main__":
     afterNodesRounded = getColoredNodes(np.round(nodes),
                                         color="bits2decimal-scale")
     
+    #todo
     afterNodesReverse = np.round(nodes)[:,0:-1] #get 6bit nodes
+    #todo
     afterNodesReverse = getColoredNodes(afterNodesReverse[:,::-1], color="bits2decimal-scale")
     
     afterNodesSeparated = afterNodesRounded.copy()
@@ -318,43 +343,3 @@ if __name__ == "__main__":
     
     mappingDataSequencial = np.array(mappingDataSequencial).reshape(len(mappingDataSequencial),len(mappingDataSequencial[0]))
     
-    """
-    #実数ノードに全入力を曝露したデータ
-    nodes_mapped_new_input = main.som.mapping(mappingDataSequencial)
-    
-    nodes_mapped_new_input_colored = getColoredNodes(nodes_mapped_new_input, color="colored")
-
-    plt.figure()
-    plt.imshow(nodes_mapped_new_input_colored, cmap="gray", vmin=0, vmax=255, interpolation="none")
-    plt.title("map of new classifier input")
-    plt.savefig(dirStr_result +
-                "\\map of new classifier input" 
-                + dt_now)
-    """
-    
-    #00‐1領域に現れた不正解分類子の分析
-    """
-    mappingDataSequencial_000 = []
-    for i in range(0,8):
-        mappingDataSequencial_000.append(str(bin(i))[2:].zfill(6))
-        
-    mappingDataSequencial_000 = [list(x) for x in mappingDataSequencial_000]
-    
-    for i, row in enumerate(mappingDataSequencial_000):
-        mappingDataSequencial_000[i] = [int(x) for x in row]
-        mappingDataSequencial_000[i].append(1)
-        
-    mappingDataSequencial_000 = np.delete(mappingDataSequencial_000,5,0)
-        
-    nodes_mapped_incorrect_input = main.som.mapping(mappingDataSequencial_000, isRounded = True)
-    
-    nodes_mapped_incorrect_input_colored = getColoredNodes(nodes_mapped_incorrect_input, color="colored")
-    
-    plt.figure()
-    plt.imshow(nodes_mapped_incorrect_input_colored, cmap="gray", vmin=0, vmax=255, interpolation="none")
-    plt.title("map of incorrect classifier")
-    plt.savefig(dirStr_result +
-                "\\map of incorrect classifier" 
-                + dt_now)
-    """
-    plt.show()

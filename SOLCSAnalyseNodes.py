@@ -52,15 +52,15 @@ class AnalyseNodes():
             #全てのインデックスを返す
             bmu = np.where(norms == norms.min())
             
-        return np.unravel_index(bmu,(100, 100)) #hack: magic number #N*N行列のargmin
+        return np.unravel_index(bmu,(100, 100)) #hack: todo: magic number #N*N行列のargmin
         
     def mapping(self, mappingDataList):
-        mapped = np.full((100, 100, 7), -1) #hack: magic number
+        mapped = np.full((100, 100, 7), -1) #hack: todo: magic number
         for i, cl in enumerate(mappingDataList):
             idx = self.matchingUnits(nodes=self.nodes, compare=cl, allIdx=True)
             mapped[idx] = cl
         
-        return mapped.reshape(100*100, 7) #hack: magic number
+        return mapped.reshape(100*100, 7) #hack: todo: magic number
             
 if __name__ == "__main__":
     dirStr = input("input dir pass like \"seed + xx\":")

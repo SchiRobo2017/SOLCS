@@ -5,6 +5,7 @@ Created on Sat Dec 21 17:59:06 2019
 @author: Nakata Koya
 """
 
+import math
 import pprint
 import numpy as np
 import pickle
@@ -28,16 +29,32 @@ def fraction(nodes_rounded, adbits, actions):
             frac = count_act / count_adbit
             #print(frac)
             ret_dic[(tuple(adbit), act)] = frac
-        
-    #nodes_adbit = extractWithAdbit(adbit, nodes_rounded)
-    #nodes_act = extractWithAct(act, nodes_adbit)
-    
-    #count_adbit = len(nodes_adbit)
-    #count_act = len(nodes_act)
-    
-    #return count_act / count_adbit
-            
+
     return ret_dic
+
+def entropy(nodes_rounded, adbits, actions):
+    ret_dic = {}
+    
+    for adbit in adbits:
+        nodes_adbit = _extractWithAdbit(adbit, nodes_rounded)
+        entropy = 0
+        for act in actions:
+            nodes_act = _extractWithAct(act, nodes_adbit)
+            
+            count_adbit = len(nodes_adbit)
+            count_act = len(nodes_act)
+            
+            p = count_act / count_adbit
+            
+            if p == 0.0:
+                self_entropy = -p*math.log2(0.01)
+            else:
+                self_entropy = -p*math.log2(p)
+            entropy += self_entropy
+            
+        ret_dic[tuple(adbit)] = entropy
+        
+    return ret_dic    
 
 def _extractWithAdbit(adbit, nodes_rounded): #adbitが一致するノードの抽出
     cluster = []
@@ -69,4 +86,6 @@ if __name__ == "__main__":
     #print(adbit00)
     
     fractions = fraction(nodes, adbits, actions)
+    entropy_ = entropy(nodes, adbits, actions)
     pprint.pprint(fractions)
+    pprint.pprint(entropy_)

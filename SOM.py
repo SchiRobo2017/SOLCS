@@ -14,7 +14,7 @@ import SOLCSFigureGenerator as fg
 from tqdm import tqdm
 #from numba.decorators import jit
 
-ADBIT00 = [0,1,2,-1]
+ADBIT00 = [0,1,2]
 ADBIT01 = [0,1,3]
 ADBIT10 = [0,1,4]
 ADBIT11 = [0,1,5]

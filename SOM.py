@@ -9,8 +9,10 @@ import numpy as np
 import os
 import math
 import pickle
+import pprint
 import SOLCSConfig as conf
 import SOLCSFigureGenerator as fg
+import SOLCS_entropy as entropy
 from tqdm import tqdm
 #from numba.decorators import jit
 
@@ -18,9 +20,13 @@ ADBIT00 = [0,1,2]
 ADBIT01 = [0,1,3]
 ADBIT10 = [0,1,4]
 ADBIT11 = [0,1,5]
+ADBIT_IDX = {"BLACK":[0,1,2], "RED":[0,1,3], "GREEN":[0,1,4], "BLUE":[0,1,5]}
+
+ADBIT_VALS = [[0,0,0], [0,0,1], [0,1,0], [0,1,1], [1,0,0], [1,0,1], [1,1,0], [1,1,1]]
+ACTIONS = [0,1]
 
 class SOM():
-    def __init__(self, teachers, N, head=None, seed=None, doesErrorCorrect = False):
+    def __init__(self, teachers, N, upd_bit = conf.ADBIT00, head=None, seed=None, doesErrorCorrect = False):
         #seed setting
         if seed==None:
             None
@@ -31,12 +37,14 @@ class SOM():
         self.n_teacher = self.teachers.shape[0]
         self.head = head
         self.N = N
+        self.upd_bit = upd_bit
         self.doesErrorCorrect = doesErrorCorrect
         
         #格子点の生成
         x, y = np.meshgrid(range(self.N), range(self.N))
         #座標の配列に変換
-        self.c = np.hstack((y.flatten()[:, np.newaxis],x.flatten()[:, np.newaxis]))
+        self.c = np.hstack((y
+                            .flatten()[:, np.newaxis],x.flatten()[:, np.newaxis]))
         #初期マップの生成 caution:11月11日まで行動もランダムに与えていた！
         self.nodes = np.round(np.random.rand(self.N*self.N, self.teachers.shape[1]))
         
@@ -48,12 +56,14 @@ class SOM():
         #for cl in self.nodes:
         #    cl.append(1000*cl[-1])
             
+        #entropy
+        self.entropy_list = []
+            
     def train(self):
         print("training has started.")
 
         #hack
-        ADBIT = ADBIT00
-        for i, teacher in enumerate(tqdm(self.teachers)):
+        for i, teacher in enumerate(tqdm(self.teachers, position=0, desc="te:"+str(conf.seed_teacher)+" tr"+str(conf.seed_train))):
             bmu = self._best_matching_unit(teacher)
             d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuのmap上での距離
             L = self._learning_ratio(i)
@@ -61,7 +71,7 @@ class SOM():
             
             #teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
             #todo:                                                                                            
-            self.nodes[:,ADBIT] +=  L * S[:, np.newaxis] * (teacher[ADBIT] - self.nodes[:,ADBIT])
+            self.nodes[:,self.upd_bit] +=  L * S[:, np.newaxis] * (teacher[self.upd_bit] - self.nodes[:,self.upd_bit])
 
             #全ビット更新
             #self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
@@ -72,8 +82,10 @@ class SOM():
                 self.nodes[:,-1] = getAnsNodes(np.round(self.nodes)).reshape(conf.N*conf.N)
                 
             #エントロピーの計算とプリント
-            #entropy = [inf] * 4
-            #entropy = entropy(nodes)
+            #entropy_ = entropy.entropy(np.round(self.nodes), ADBIT_VALS, ACTIONS)
+            #self.entropy_list.append(entropy_)
+            #print()
+            #pprint.pprint(entropy_)
 
         print("training has finished")
         return self.nodes
@@ -272,10 +284,10 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     raise ValueError("colorに渡す引数が間違ってるよ")
 
 class Main():
-    def __init__(self):
+    def __init__(self, upd_bit=conf.ADBIT00):
         os.makedirs(conf.dirStr_result() ,exist_ok=True)            
         self.teachers = generateMUXNodes(seed=conf.seed_teacher, k=conf.k, includeAns=conf.includeAns, num_teachers=conf.num_teachers, includeRewards = conf.includeRewards)        
-        self.som = SOM(self.teachers, N=conf.N, head=conf.head, seed=conf.seed_train, doesErrorCorrect = conf.doesErrorCorrect)
+        self.som = SOM(self.teachers, N=conf.N, upd_bit=upd_bit, head=conf.head, seed=conf.seed_train, doesErrorCorrect = conf.doesErrorCorrect)
 
     def main(self):
         self.som.train() #som.nodes.shape = (N*N=100*100, bits=7)
@@ -289,7 +301,7 @@ class Main():
         #   nodes = pickle.load(nodes)        
 
 if __name__ == "__main__":
-    main = Main()
+    main = Main(upd_bit=conf.ADBIT00)
     main.main()
     fg.FigureGenerater(dirStr_result = conf.dirStr_result()).genFig()
     

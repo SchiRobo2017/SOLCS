@@ -12,6 +12,8 @@ import pickle
 
 from tqdm import tqdm
 
+ADBIT_IDX = {"BLACK":[0,1,2], "RED":[0,1,3], "GREEN":[0,1,4], "BLUE":[0,1,5]}
+
 def fraction(nodes_rounded, adbits, actions):
     ret_dic = {}
     #dic["key"] = "value"    
@@ -59,7 +61,7 @@ def entropy(nodes_rounded, adbits, actions):
 def _extractWithAdbit(adbit, nodes_rounded): #adbitが一致するノードの抽出
     cluster = []
     for cl in nodes_rounded:
-        if (adbit == cl[:len(adbit)]).all():
+        if (adbit == cl[adbit_idx]).all():
             cluster.append(cl)
     return np.array(cluster)
 
@@ -73,9 +75,14 @@ def _extractWithAct(act, nodes_rounded): #adbitが一致するノードの抽出
 if __name__ == "__main__":
     adbits_vals = [[0,0,0], [0,0,1], [0,1,0], [0,1,1], [1,0,0], [1,0,1], [1,1,0], [1,1,1]]
     actions = [0,1]
-    resultDirStr = "exp_data\\debug_and_error_correct_with_updating_map\\teacher1_train10_error_corrected"
-    with open(resultDirStr +  "\\nodes.bin", "rb") as nodes_bin:
-        nodes = pickle.load(nodes_bin)
+    
+    resultDirStr = input("input dir path:")
+    if resultDirStr == "":
+        resultDirStr = "exp_data\\debug_and_error_correct_with_updating_map\\teacher1_train10_error_corrected"
+        
+    print(resultDirStr)
+    with open(resultDirStr, "rb") as nodes:
+        nodes = pickle.load(nodes)
         
     #print(nodes.shape)
     

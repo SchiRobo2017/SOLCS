@@ -52,6 +52,8 @@ class SOM():
         for cl in self.nodes:
             cl[-1] = getAns(cl)
             
+        self.ininodes = np.copy(self.nodes)
+            
         #得点の付与
         #for cl in self.nodes:
         #    cl.append(1000*cl[-1])
@@ -86,6 +88,13 @@ class SOM():
             #self.entropy_list.append(entropy_)
             #print()
             #pprint.pprint(entropy_)
+            
+            if i%1000 == 0:
+                fractions = entropy.fraction(np.round(self.nodes), conf.ADBIT_VALS, conf.ACTIONS)
+                entropy_ = entropy.entropy(np.round(self.nodes), conf.ADBIT_VALS, conf.ACTIONS)
+                #pprint.pprint(fractions)
+                #pprint.pprint(entropy_)
+                
 
         print("training has finished")
         return self.nodes
@@ -285,7 +294,6 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
 
 class Main():
     def __init__(self, upd_bit=conf.ADBIT00):
-        conf.dirNameAdditionalStr = str(upd_bit)
         os.makedirs(conf.dirStr_result() ,exist_ok=True)            
         self.teachers = generateMUXNodes(seed=conf.seed_teacher, k=conf.k, includeAns=conf.includeAns, num_teachers=conf.num_teachers, includeRewards = conf.includeRewards)        
         self.som = SOM(self.teachers, N=conf.N, upd_bit=upd_bit, head=conf.head, seed=conf.seed_train, doesErrorCorrect = conf.doesErrorCorrect)
@@ -296,6 +304,9 @@ class Main():
         #結果をpickleに保存
         with open(conf.dirStr_result() + "\\" + "nodes.bin", "wb") as nodes:
                   pickle.dump(self.som.nodes, nodes)        
+                  
+        with open(conf.dirStr_result() + "\\" + "ininodes.bin", "wb") as ininodes:
+           pickle.dump(self.som.ininodes, ininodes) 
 
         #how to load
         #with open("nodes.bin", "rb") as nodes:

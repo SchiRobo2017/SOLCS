@@ -21,7 +21,7 @@ includeRewards = False
 bits = k + 2**k
 if includeAns==True:
     bits+=1
-num_teachers = 10000 #default=10000 収束する   
+num_teachers = 1 #default=10000 収束する   
 #dirStr_result = "exp_data\\seed" + str(seed_teacher) #seedが途中で変わったときに対応できない
 
 #SOMの更新部に関する定義

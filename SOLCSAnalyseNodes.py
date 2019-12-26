@@ -11,15 +11,22 @@ import numpy as np
 from itertools import groupby
 from operator import itemgetter
 
+cl_sharp_expression = [0,0,0,"#","#","#",0]
+
 class AnalyseNodes():
     #load nodes data
-    def __init__(self, resultDirStr):
+    def __init__(self, resultDirStr, is_relative_path=True):
         if resultDirStr == "":
             print("test execution")
             
-        self.resultDirStr = "exp_data\\" + resultDirStr
-        with open(self.resultDirStr +  "\\nodes.bin", "rb") as nodes:
-            self.nodes = pickle.load(nodes)
+        if is_relative_path==True:
+            self.resultDirStr = "exp_data\\" + resultDirStr
+            with open(self.resultDirStr +  "\\nodes.bin", "rb") as nodes:
+                self.nodes = pickle.load(nodes)
+        else:
+            self.resultDirStr = resultDirStr
+            with open(self.resultDirStr, "rb") as nodes:
+                self.nodes = pickle.load(nodes)
             
     def extractWithColor(self, color): #クラスタの抽出
         cluster = []
@@ -73,7 +80,7 @@ class AnalyseNodes():
         for i in range(num_cls):
             replace_bit_arr.append(list(map(int, list(bin(i)[2:].zfill(count_sharp)))))
             
-        print(replace_bit_arr)
+        #print(replace_bit_arr)
         
         idx_sharps = [i for i, x in enumerate(cl_includes_sharp) if x == "#"]
         
@@ -84,10 +91,15 @@ class AnalyseNodes():
             general_cls.append(cl_replaced.tolist())
             
         return [list(map(int, cl)) for cl in general_cls]
+    
+    def extract_cls_by_action(self, unique_cls, action=0):
+        for cl in unique_cls:
+            if cl[-1] == action:
+                print(cl)
             
 if __name__ == "__main__":
     dirStr = input("input dir pass like \"seed + xx\":")
-    a = AnalyseNodes(dirStr)
+    a = AnalyseNodes(dirStr, is_relative_path=False)
     
     """
     classifiers each of adress part or bound data on map
@@ -113,7 +125,7 @@ if __name__ == "__main__":
     blue11_unique, blue11_unique_counts = np.unique(blue11, return_counts=True,  axis=0)
     blue11_unique_dic = a.uniqueClsDicByCounts(blue11_unique_counts, blue11_unique)
     
-    print("seed_teacher = 10, seed_train = None") #hack: magic number
+    #print("seed_teacher = 10, seed_train = None") #hack: magic number
     print("black00: unique cls =", len(black00_unique_dic), ", total cls =", sum(black00_unique_counts))
     a.printClsGroupby(black00_unique_dic)
     print("red01: unique cls =", len(red01_unique_dic), ", total cls =", sum(red01_unique_counts))
@@ -125,8 +137,8 @@ if __name__ == "__main__":
     a.printClsGroupby(blue11_unique_dic)
     
     
-    mapping_data = [[1,1,0,0,0,1,1]]
-    #mapping_data = general_cls_from_dontcare_expression(cl_includes_sharp = [1,1,"#","#","#","#",1])
+    #mapping_data = [[1,1,0,0,0,1,1]]
+    mapping_data = a.general_cls_from_dontcare_expression(cl_includes_sharp = cl_sharp_expression)
     nodes_mapped_new_input = a.mapping(mapping_data)
     
     nodes_mapped_new_input_colored = fg.SOM.getColoredNodes(nodes_mapped_new_input, color="colored")
@@ -134,6 +146,8 @@ if __name__ == "__main__":
     plt.figure()
     plt.imshow(nodes_mapped_new_input_colored, cmap="gray", vmin=0, vmax=255, interpolation="none")
     plt.title("map of new classifier input")
+    plt.show()
+    
     """
     plt.savefig(dirStr_result +
                 "\\map of new classifier input" 

@@ -38,10 +38,10 @@ def dirStr_result(): #seedの動的変更に対応
     dirStr = "exp_data\\teacher" + str(seed_teacher) + "_train" +str(seed_train)
     #if doesErrorCorrect == True:
     #    dirStr += "_error_corrected"
-    #dirStr += dirNameAdditionalStr
-    dirStr += "_" + str(dt_now())
+    dirStr += dirNameAdditionalStr
+    dirStr += "_" + str(dt_loaded)
     return dirStr
 
-#dt_now = datetime.datetime.now().strftime('%Y%m%d%H%M%S') #モジュールをロードした時刻
+dt_loaded = datetime.datetime.now().strftime('%Y%m%d%H%M%S') #モジュールをロードした時刻
 def dt_now(): #この関数を呼び出した時刻
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S')

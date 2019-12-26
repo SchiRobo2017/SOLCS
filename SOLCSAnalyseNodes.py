@@ -14,6 +14,9 @@ from operator import itemgetter
 class AnalyseNodes():
     #load nodes data
     def __init__(self, resultDirStr):
+        if resultDirStr == "":
+            print("test execution")
+            
         self.resultDirStr = "exp_data\\" + resultDirStr
         with open(self.resultDirStr +  "\\nodes.bin", "rb") as nodes:
             self.nodes = pickle.load(nodes)
@@ -61,6 +64,26 @@ class AnalyseNodes():
             mapped[idx] = cl
         
         return mapped.reshape(100*100, 7) #hack: todo: magic number
+    
+    def general_cls_from_dontcare_expression(self, cl_includes_sharp = [1,1,"#","#","#",1,1]):
+        count_sharp = cl_includes_sharp.count("#")
+        num_cls = pow(2,count_sharp)
+        
+        replace_bit_arr = []
+        for i in range(num_cls):
+            replace_bit_arr.append(list(map(int, list(bin(i)[2:].zfill(count_sharp)))))
+            
+        print(replace_bit_arr)
+        
+        idx_sharps = [i for i, x in enumerate(cl_includes_sharp) if x == "#"]
+        
+        general_cls = []
+        for replace_bit in replace_bit_arr:
+            cl_replaced = np.array(cl_includes_sharp)
+            cl_replaced[idx_sharps] = replace_bit
+            general_cls.append(cl_replaced.tolist())
+            
+        return [list(map(int, cl)) for cl in general_cls]
             
 if __name__ == "__main__":
     dirStr = input("input dir pass like \"seed + xx\":")
@@ -101,7 +124,9 @@ if __name__ == "__main__":
     print("blue11:")
     a.printClsGroupby(blue11_unique_dic)
     
-    mapping_data = [[0,0,1,0,0,0,1]]
+    
+    mapping_data = [[1,1,0,0,0,1,1]]
+    #mapping_data = general_cls_from_dontcare_expression(cl_includes_sharp = [1,1,"#","#","#","#",1])
     nodes_mapped_new_input = a.mapping(mapping_data)
     
     nodes_mapped_new_input_colored = fg.SOM.getColoredNodes(nodes_mapped_new_input, color="colored")

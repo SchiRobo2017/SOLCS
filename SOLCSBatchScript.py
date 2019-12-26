@@ -23,4 +23,4 @@ for te, tr in seeds:
         print("update_index:", str(adbit))
         main = SOM.Main(upd_bit=adbit)
         main.main()
-        fg.FigureGenerater(dirStr_result = SOM.conf.dirStr_result().genFig(doesShow=False))
+        fg.FigureGenerater(dirStr_result = SOM.conf.dirStr_result()).genFig(doesShow=False)

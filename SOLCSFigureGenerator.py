@@ -18,7 +18,7 @@ class FigureGenerater():
         #todo
         self.actNodesRealNum = self.nodes[:,-1].reshape(SOM.conf.N, SOM.conf.N)
         self.actNodes = np.round(self.actNodesRealNum)
-        self.correctActNodes = SOM.getAnsNodes(np.round(self.nodes))
+        self.correctActNodes = SOM.getAnsNodes(np.round(self.nodes)).reshape(SOM.conf.N, SOM.conf.N)
         self.afterNodesRounded_hamming = SOM.getColoredNodes(np.round(self.nodes),
                                         color="bits-scale")
         self.afterNodesRounded = SOM.getColoredNodes(np.round(self.nodes),
@@ -176,7 +176,8 @@ class FigureGenerater():
         
         nodes_tmp = np.round(self.nodes)
         
-        for i, val in enumerate(nodes_incorrect.reshape(10000)):
+        #hack
+        for i, val in enumerate(nodes_incorrect.reshape(SOM.conf.N * SOM.conf.N)):
             if val == 0:
                 #white
                 nodes_tmp[i] = [-1,-1,-1,-1,-1,-1,-1]

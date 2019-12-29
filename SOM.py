@@ -79,9 +79,9 @@ class SOM():
             #self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
             
             #誤り訂正　正解行動を付与
-            #todo
+            #todo bottle neck
             if self.doesErrorCorrect:
-                self.nodes[:,-1] = getAnsNodes(np.round(self.nodes)).reshape(conf.N*conf.N)
+                self.nodes[:,-1] = getAnsNodes(np.round(self.nodes))
                 
             #エントロピーの計算とプリント
             #entropy_ = entropy.entropy(np.round(self.nodes), ADBIT_VALS, ACTIONS)
@@ -89,12 +89,13 @@ class SOM():
             #print()
             #pprint.pprint(entropy_)
             
+            """
             if i%1000 == 0:
                 fractions = entropy.fraction(np.round(self.nodes), conf.ADBIT_VALS, conf.ACTIONS)
                 entropy_ = entropy.entropy(np.round(self.nodes), conf.ADBIT_VALS, conf.ACTIONS)
                 #pprint.pprint(fractions)
                 #pprint.pprint(entropy_)
-                
+            """  
 
         print("training has finished")
         return self.nodes
@@ -166,7 +167,7 @@ class SOM():
         return np.exp(-d**2/(2*s**2))
 
     def _cond_entropy(nodes, adbit):
-        return None                 
+        return None
             
 def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = False, includeRewards = False):
     #seed setting
@@ -221,7 +222,7 @@ def getAnsNodes(nodes): #nodes.shape must be [N*N, bits]
             
     #ansNodes = np.array(ansNodes)
     #return ansNodes.reshape(conf.N, conf.N)
-    return (np.array([getAns(cl) for cl in nodes])).reshape(conf.N, conf.N)
+    return (np.array([getAns(cl) for cl in nodes]))
 
 def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     Max = k + k**2

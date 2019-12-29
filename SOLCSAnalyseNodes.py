@@ -98,7 +98,7 @@ class AnalyseNodes():
                 print(cl)
             
 if __name__ == "__main__":
-    dirStr = input("input dir pass like \"seed + xx\":")
+    dirStr = input("input dir pass:")
     a = AnalyseNodes(dirStr, is_relative_path=False)
     
     """

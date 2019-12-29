@@ -212,7 +212,8 @@ def getAns(bitArray):
     #return ans
         
     #return refbit[int(cal,2)]
-    return bitArray[conf.k+int("".join([str(int(x)) for x in addbit]),2)]
+    return bitArray[conf.k+int("".join(map(str, map(int, addbit))),2)]
+    #return bitArray[conf.k+int("".join([str(int(x)) for x in addbit]),2)]
 
 #act含む/含まない両方対応
 def getAnsNodes(nodes): #nodes.shape must be [N*N, bits]
@@ -222,7 +223,8 @@ def getAnsNodes(nodes): #nodes.shape must be [N*N, bits]
             
     #ansNodes = np.array(ansNodes)
     #return ansNodes.reshape(conf.N, conf.N)
-    return (np.array([getAns(cl) for cl in nodes]))
+    return np.array(list(map(getAns, nodes))) #mapで高速化できるか?
+    #return np.array([getAns(cl) for cl in nodes])
 
 def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
     Max = k + k**2

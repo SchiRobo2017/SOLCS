@@ -96,6 +96,21 @@ class AnalyseNodes():
         for cl in unique_cls:
             if cl[-1] == action:
                 print(cl)
+
+def printClsGroupby(unique_dic, f=None):
+    for (count, cl_group) in groupby(unique_dic, key=itemgetter(0)):
+        print("count:" + str(count), file=f)
+        for cl in cl_group:
+            print(cl[1], file=f)
+    print("\n", file=f)
+
+def print_unique_cls_dic_dic(unique_cls_dic_dic, f=None):
+    for itr, unique_cls_dic in unique_cls_dic_dic.items():
+        print("iteration:", itr)
+        for color, each_color_dic in unique_cls_dic.items():
+            total_cls = sum([x[0] for x in each_color_dic])
+            print(color + ": unique cls =", len(each_color_dic), ", total cls =", total_cls, file=f)
+            printClsGroupby(each_color_dic, f)
             
 if __name__ == "__main__":
     path_nodes_exists = input("input dir path where nodes file exists:")

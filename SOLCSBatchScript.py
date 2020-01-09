@@ -21,7 +21,7 @@ for te, tr in seeds:
     print("seed_teacher=", te, "seed_train=", tr)
     for adbit in SOM.conf.ADBIT_IDX.values():
         print("update_index:", str(adbit))
-        SOM.conf.dirNameAdditionalStr = "_" + str(adbit) + "high_speed_test"
+        SOM.conf.dirNameAdditionalStr = "_" + str(adbit) + "_N=" + str(SOM.conf.N) + "_extract_unq_rule_in_itr"
         main = SOM.Main(upd_bit=adbit)
         main.main()
         fg.FigureGenerater(dirStr_result = SOM.conf.dirStr_result()).genFig(doesShow=False)

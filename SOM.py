@@ -76,6 +76,12 @@ class SOM():
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
             
+            #ユニークルールセット
+            if i%1000 == 0:
+                unique_dic_ = unique_dic(np.round(self.nodes))
+                #print(unique_dic_)
+                self.unique_dic_dic[i] = unique_dic_
+            
             #teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
             #todo:                                                                                            
             self.nodes[:,self.upd_bit] +=  L * S[:, np.newaxis] * (teacher[self.upd_bit] - self.nodes[:,self.upd_bit])
@@ -87,12 +93,6 @@ class SOM():
             #todo bottle neck
             if self.doesErrorCorrect:
                 self.nodes[:,-1] = getAnsNodes(np.round(self.nodes))
-                
-            #ユニークルールセット
-            if i%1000 == 0:
-                unique_dic_ = unique_dic(np.round(self.nodes))
-                print(unique_dic_)
-                self.unique_dic_dic[i] = unique_dic_
 
         print("training has finished")
         return self.nodes
@@ -351,7 +351,7 @@ class Main():
         with open(conf.dirStr_result() + "\\" + "ininodes.bin", "wb") as ininodes:
             pickle.dump(self.som.ininodes, ininodes)
            
-        with open(conf.dirStr_result() + "\\" + "unique_dic_dic", "wb") as dic:
+        with open(conf.dirStr_result() + "\\" + "unique_dic_dic.bin", "wb") as dic:
             pickle.dump(self.som.unique_dic_dic, dic)
 
         #how to load

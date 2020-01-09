@@ -11,7 +11,7 @@ dirNameAdditionalStr = ""
 #caution: 中間発表の結果はteacher=10, trainはSOM初期化時にNone渡し
 seed_teacher = 10 #入力データseed
 seed_train = None #マップ初期化シード
-N = 100 #default=100
+N = 30 #default=100
 head = 3
 k = 2
 includeAns = True

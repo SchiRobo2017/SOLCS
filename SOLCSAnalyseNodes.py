@@ -106,12 +106,20 @@ def printClsGroupby(unique_dic, f=None):
 
 def print_unique_cls_dic_dic(unique_cls_dic_dic, f=None):
     for itr, unique_cls_dic in unique_cls_dic_dic.items():
-        print("iteration:", itr)
+        print("iteration:", itr, file=f)
         for color, each_color_dic in unique_cls_dic.items():
             total_cls = sum([x[0] for x in each_color_dic])
             print(color + ": unique cls =", len(each_color_dic), ", total cls =", total_cls, file=f)
             printClsGroupby(each_color_dic, f)
             
+def save_unique_cls_dic_dic_as_txt(unique_cls_dic_dic, dir_result):
+    name_dic = "unipue_dic_dic.txt"
+    dir_result = dir_result + "\\" +  name_dic
+    
+    with open(dir_result, "w") as f:    
+        #print("seed_teacher = 10, seed_train = None") #hack: magic number
+        print_unique_cls_dic_dic(unique_cls_dic_dic, f)
+
 if __name__ == "__main__":
     path_nodes_exists = input("input dir path where nodes file exists:")
     name_nodes = input("name of nodes:")

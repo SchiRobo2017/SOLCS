@@ -12,7 +12,7 @@ import pickle
 import pprint
 import SOLCSConfig as conf
 import SOLCSFigureGenerator as fg
-import SOLCSAnalyseNodes as an
+import SOLCSAnalyseNodes as a
 import SOLCS_entropy as entropy
 from tqdm import tqdm
 from itertools import groupby
@@ -353,6 +353,10 @@ class Main():
            
         with open(conf.dirStr_result() + "\\" + "unique_dic_dic.bin", "wb") as dic:
             pickle.dump(self.som.unique_dic_dic, dic)
+            
+        a.save_unique_cls_dic_dic_as_txt(self.som.unique_dic_dic, conf.dirStr_result())
+                    
+        
 
         #how to load
         #with open("nodes.bin", "rb") as nodes:

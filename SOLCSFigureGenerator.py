@@ -78,16 +78,6 @@ class FigureGenerater():
         plt.savefig(self.dirStr_result +
                     "\\map of correct action part after leaning"
                     + dt_now)
-    
-        """
-        plt.figure()
-        plt.imshow(self.afterNodesRounded_hamming, cmap="gray", vmin=0, vmax=5, interpolation="none")
-        plt.title("map of condition part after learning scaled by Hamming distance")
-        plt.colorbar()
-        plt.savefig(self.dirStr_result +
-                    "\\map of condition part after learning scaled by Hamming distance"
-                    + dt_now)
-        """
         
         plt.figure()
         plt.imshow(self.afterNodesRounded, cmap="gray", vmin=0, vmax=63, interpolation="none")
@@ -96,36 +86,6 @@ class FigureGenerater():
         plt.savefig(self.dirStr_result +
                     "\\map of condition part after learning"
                     + dt_now)
-        
-        """
-        plt.figure()
-        plt.imshow(self.afterNodesReverse , cmap="gray", vmin=0, vmax=63, interpolation="none")
-        plt.title("map of condition part after learning(reversed value)")
-        plt.colorbar()
-        plt.savefig(self.dirStr_result +
-                    "\\map of condition part after learning(reversed value)" 
-                    + dt_now)
-        """
-        
-        #afterNodesSeparatedの値を行動の0,1に応じて色分け
-        for i, row in enumerate(self.actNodes): #debug: correctActNodesでは正解行動に応じtえ色分けされてしまう
-            for j, ans in enumerate(row):
-                if ans == 1.0:
-                    None
-                elif ans == 0.0:
-                    #val = afterNodesSeparated[i,j]
-                    #afterNodesSeparated[i,j] = -val
-                    self.afterNodesSeparated[i,j] = -self.afterNodesSeparated[i,j]
-                    
-        """
-        plt.figure()
-        plt.imshow(self.afterNodesSeparated, cmap="PuOr", vmin=-64, vmax=63, interpolation="none")
-        plt.title("map of condition part separated by action")
-        plt.colorbar()
-        plt.savefig(self.dirStr_result +
-                    "\\map of condition part separated by action" 
-                    + dt_now)
-        """
         
         plt.figure()
         plt.imshow(self.afterNodesColored, cmap="gray", vmin=0, vmax=255, interpolation="none")

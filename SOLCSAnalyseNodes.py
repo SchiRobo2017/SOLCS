@@ -15,7 +15,7 @@ cl_sharp_expression = [0,0,0,"#","#","#",0]
 
 class AnalyseNodes():
     #load nodes data
-    def __init__(self, resultDirStr, is_relative_path=True):
+    def __init__(self, resultDirStr="", is_relative_path=True):
         if resultDirStr == "":
             print("test execution")
             
@@ -45,12 +45,12 @@ class AnalyseNodes():
         #登場回数でソート
         return sorted(unique_dic, key=itemgetter(0))
     
-    def printClsGroupby(self, unique_dic):
+    def printClsGroupby(self, unique_dic, f):
         for (count, cl_group) in groupby(unique_dic, key=itemgetter(0)):
-            print("count:" + str(count))
+            print("count:" + str(count), file=f)
             for cl in cl_group:
-                print(cl[1])
-        print("\n")
+                print(cl[1], file=f)
+        print("\n", file=f)
         
     def matchingUnits(self, compare, nodes, allIdx=True):
         norms = np.linalg.norm(np.round(self.nodes) - compare, axis=1)
@@ -98,8 +98,11 @@ class AnalyseNodes():
                 print(cl)
             
 if __name__ == "__main__":
-    dirStr = input("input dir pass:")
-    a = AnalyseNodes(dirStr, is_relative_path=False)
+    path_nodes_exists = input("input dir path where nodes file exists:")
+    name_nodes = input("name of nodes:")
+    path_nodes = path_nodes_exists + name_nodes + ".bin"
+    path_log = path_nodes_exists + "unique_cls_dic_" + name_nodes + ".txt"
+    a = AnalyseNodes(path_nodes, is_relative_path=False)
     
     """
     classifiers each of adress part or bound data on map
@@ -125,18 +128,18 @@ if __name__ == "__main__":
     blue11_unique, blue11_unique_counts = np.unique(blue11, return_counts=True,  axis=0)
     blue11_unique_dic = a.uniqueClsDicByCounts(blue11_unique_counts, blue11_unique)
     
-    #print("seed_teacher = 10, seed_train = None") #hack: magic number
-    print("black00: unique cls =", len(black00_unique_dic), ", total cls =", sum(black00_unique_counts))
-    a.printClsGroupby(black00_unique_dic)
-    print("red01: unique cls =", len(red01_unique_dic), ", total cls =", sum(red01_unique_counts))
-    a.printClsGroupby(red01_unique_dic)
-    print("green10: unique cls =", len(green10_unique_dic), ", total cls =", sum(green10_unique_counts))
-    a.printClsGroupby(green10_unique_dic)
-    print("blue11: unique cls =", len(blue11_unique_dic), ", total cls =", sum(blue11_unique_counts))
-    print("blue11:")
-    a.printClsGroupby(blue11_unique_dic)
+    with open(path_log, "w") as f:    
+        #print("seed_teacher = 10, seed_train = None") #hack: magic number
+        print("black00: unique cls =", len(black00_unique_dic), ", total cls =", sum(black00_unique_counts), file=f)
+        a.printClsGroupby(black00_unique_dic, f)
+        print("red01: unique cls =", len(red01_unique_dic), ", total cls =", sum(red01_unique_counts), file=f)
+        a.printClsGroupby(red01_unique_dic, f)
+        print("green10: unique cls =", len(green10_unique_dic), ", total cls =", sum(green10_unique_counts), file=f)
+        a.printClsGroupby(green10_unique_dic, f)
+        print("blue11: unique cls =", len(blue11_unique_dic), ", total cls =", sum(blue11_unique_counts), file=f)
+        a.printClsGroupby(blue11_unique_dic, f)
     
-    
+    """
     #mapping_data = [[1,1,0,0,0,1,1]]
     mapping_data = a.general_cls_from_dontcare_expression(cl_includes_sharp = cl_sharp_expression)
     nodes_mapped_new_input = a.mapping(mapping_data)
@@ -147,6 +150,7 @@ if __name__ == "__main__":
     plt.imshow(nodes_mapped_new_input_colored, cmap="gray", vmin=0, vmax=255, interpolation="none")
     plt.title("map of new classifier input")
     plt.show()
+    """
     
     """
     plt.savefig(dirStr_result +

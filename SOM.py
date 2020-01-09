@@ -12,8 +12,11 @@ import pickle
 import pprint
 import SOLCSConfig as conf
 import SOLCSFigureGenerator as fg
+import SOLCSAnalyseNodes as an
 import SOLCS_entropy as entropy
 from tqdm import tqdm
+from itertools import groupby
+from operator import itemgetter
 #from numba.decorators import jit
 
 ADBIT00 = [0,1,2]
@@ -53,13 +56,15 @@ class SOM():
             cl[-1] = getAns(cl)
             
         self.ininodes = np.copy(self.nodes)
+        
+        self.unique_dic_dic = {}
             
         #得点の付与
         #for cl in self.nodes:
         #    cl.append(1000*cl[-1])
             
         #entropy
-        self.entropy_list = []
+        #self.entropy_list = []
             
     def train(self):
         print("training has started.")
@@ -83,19 +88,11 @@ class SOM():
             if self.doesErrorCorrect:
                 self.nodes[:,-1] = getAnsNodes(np.round(self.nodes))
                 
-            #エントロピーの計算とプリント
-            #entropy_ = entropy.entropy(np.round(self.nodes), ADBIT_VALS, ACTIONS)
-            #self.entropy_list.append(entropy_)
-            #print()
-            #pprint.pprint(entropy_)
-            
-            """
+            #ユニークルールセット
             if i%1000 == 0:
-                fractions = entropy.fraction(np.round(self.nodes), conf.ADBIT_VALS, conf.ACTIONS)
-                entropy_ = entropy.entropy(np.round(self.nodes), conf.ADBIT_VALS, conf.ACTIONS)
-                #pprint.pprint(fractions)
-                #pprint.pprint(entropy_)
-            """  
+                unique_dic_ = unique_dic(np.round(self.nodes))
+                print(unique_dic_)
+                self.unique_dic_dic[i] = unique_dic_
 
         print("training has finished")
         return self.nodes
@@ -294,6 +291,49 @@ def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
         raise ValueError("colorに渡す引数が間違ってるよ")
 
     raise ValueError("colorに渡す引数が間違ってるよ")
+    
+def extractWithColor(nodes, color): #クラスタの抽出
+    cluster = []
+    for cl in nodes:
+        if (color == cl[:2]).all():
+            cluster.append(cl)
+    return np.array(cluster)
+
+def uniqueClsDicByCounts(unique_counts, unique_cls):
+    unique_dic = []
+    
+    #登場回数と対応する分類子のタプルのリスト
+    for count, cl in zip(unique_counts, unique_cls):
+        unique_dic.append((count,cl))
+        
+    #登場回数でソート
+    return sorted(unique_dic, key=itemgetter(0))
+
+def unique_dic(nodes):
+    black = [0,0]
+    red = [0,1]
+    green = [1,0]
+    blue = [1,1]
+    
+    black00 = extractWithColor(nodes, black)
+    black00_unique, black00_unique_counts = np.unique(black00, return_counts=True,  axis=0)    
+    black00_unique_dic = uniqueClsDicByCounts(black00_unique_counts, black00_unique)
+            
+    red01 = extractWithColor(nodes, red)
+    red01_unique, red01_unique_counts = np.unique(red01, return_counts=True,  axis=0)
+    red01_unique_dic = uniqueClsDicByCounts(red01_unique_counts, red01_unique)
+    
+    green10 = extractWithColor(nodes, green)
+    green10_unique, green10_unique_counts = np.unique(green10, return_counts=True,  axis=0)
+    green10_unique_dic = uniqueClsDicByCounts(green10_unique_counts, green10_unique)
+    
+    blue11 = extractWithColor(nodes, blue)
+    blue11_unique, blue11_unique_counts = np.unique(blue11, return_counts=True,  axis=0)
+    blue11_unique_dic = uniqueClsDicByCounts(blue11_unique_counts, blue11_unique)
+    
+    unique_dic = {"black00":black00_unique_dic, "red01":red01_unique_dic, "green10":green10_unique_dic, "blue11":blue11_unique_dic}
+    
+    return unique_dic
 
 class Main():
     def __init__(self, upd_bit=conf.ADBIT00):
@@ -306,10 +346,13 @@ class Main():
         
         #結果をpickleに保存
         with open(conf.dirStr_result() + "\\" + "nodes.bin", "wb") as nodes:
-                  pickle.dump(self.som.nodes, nodes)        
+            pickle.dump(self.som.nodes, nodes)        
                   
         with open(conf.dirStr_result() + "\\" + "ininodes.bin", "wb") as ininodes:
-           pickle.dump(self.som.ininodes, ininodes) 
+            pickle.dump(self.som.ininodes, ininodes)
+           
+        with open(conf.dirStr_result() + "\\" + "unique_dic_dic", "wb") as dic:
+            pickle.dump(self.som.unique_dic_dic, dic)
 
         #how to load
         #with open("nodes.bin", "rb") as nodes:

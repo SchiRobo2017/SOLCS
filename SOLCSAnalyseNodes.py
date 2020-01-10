@@ -4,8 +4,6 @@ Created on Thu Oct 24 08:38:24 2019
 
 @author: Nakata Koya
 """
-import matplotlib.pyplot as plt
-import SOLCSFigureGenerator as fg
 import pickle
 import numpy as np
 from itertools import groupby
@@ -96,6 +94,49 @@ class AnalyseNodes():
         for cl in unique_cls:
             if cl[-1] == action:
                 print(cl)
+
+def uniqueClsDicByCounts(unique_counts, unique_cls):
+    unique_dic = []
+    
+    #登場回数と対応する分類子のタプルのリスト
+    for count, cl in zip(unique_counts, unique_cls):
+        unique_dic.append((count,cl))
+        
+    #登場回数でソート
+    return sorted(unique_dic, key=itemgetter(0))
+
+def extractWithColor(nodes, color): #クラスタの抽出
+    cluster = []
+    for cl in nodes:
+        if (color == cl[:2]).all():
+            cluster.append(cl)
+    return np.array(cluster)
+
+def unique_dic(nodes):
+    black = [0,0]
+    red = [0,1]
+    green = [1,0]
+    blue = [1,1]
+    
+    black00 = extractWithColor(nodes, black)
+    black00_unique, black00_unique_counts = np.unique(black00, return_counts=True,  axis=0)    
+    black00_unique_dic = uniqueClsDicByCounts(black00_unique_counts, black00_unique)
+            
+    red01 = extractWithColor(nodes, red)
+    red01_unique, red01_unique_counts = np.unique(red01, return_counts=True,  axis=0)
+    red01_unique_dic = uniqueClsDicByCounts(red01_unique_counts, red01_unique)
+    
+    green10 = extractWithColor(nodes, green)
+    green10_unique, green10_unique_counts = np.unique(green10, return_counts=True,  axis=0)
+    green10_unique_dic = uniqueClsDicByCounts(green10_unique_counts, green10_unique)
+    
+    blue11 = extractWithColor(nodes, blue)
+    blue11_unique, blue11_unique_counts = np.unique(blue11, return_counts=True,  axis=0)
+    blue11_unique_dic = uniqueClsDicByCounts(blue11_unique_counts, blue11_unique)
+    
+    unique_dic = {"black00":black00_unique_dic, "red01":red01_unique_dic, "green10":green10_unique_dic, "blue11":blue11_unique_dic}
+    
+    return unique_dic
 
 def printClsGroupby(unique_dic, f=None):
     for (count, cl_group) in groupby(unique_dic, key=itemgetter(0)):

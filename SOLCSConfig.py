@@ -11,11 +11,11 @@ dirNameAdditionalStr = ""
 #caution: 中間発表の結果はteacher=10, trainはSOM初期化時にNone渡し
 seed_teacher = 10 #入力データseed
 seed_train = None #マップ初期化シード
-N = 10 #default=100
+N = 5 #default=100
 head = 3
 k = 2
 includeAns = True
-doesErrorCorrect = True
+doesErrorCorrect = False
 #生成する問題に報酬を付与するか
 includeRewards = False
 bits = k + 2**k

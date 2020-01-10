@@ -5,6 +5,7 @@ Created on Thu Oct 24 11:24:13 2019
 @author: Nakata Koya
 """
 import pickle
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 import SOM
@@ -19,18 +20,18 @@ class FigureGenerater():
         self.actNodesRealNum = self.nodes[:,-1].reshape(SOM.conf.N, SOM.conf.N)
         self.actNodes = np.round(self.actNodesRealNum)
         self.correctActNodes = SOM.getAnsNodes(np.round(self.nodes)).reshape(SOM.conf.N, SOM.conf.N)
-        self.afterNodesRounded_hamming = SOM.getColoredNodes(np.round(self.nodes),
+        self.afterNodesRounded_hamming = getColoredNodes(np.round(self.nodes),
                                         color="bits-scale")
-        self.afterNodesRounded = SOM.getColoredNodes(np.round(self.nodes),
+        self.afterNodesRounded = getColoredNodes(np.round(self.nodes),
                                         color="bits2decimal-scale")
     
         #todo
         self.afterNodesReverse = np.round(self.nodes)[:,0:-1] #get 6bit nodes
         #todo
-        self.afterNodesReverse = SOM.getColoredNodes(self.afterNodesReverse[:,::-1], color="bits2decimal-scale")
+        self.afterNodesReverse = getColoredNodes(self.afterNodesReverse[:,::-1], color="bits2decimal-scale")
     
         self.afterNodesSeparated = self.afterNodesRounded.copy()
-        self.afterNodesColored = SOM.getColoredNodes(np.round(self.nodes), color="colored")        
+        self.afterNodesColored = getColoredNodes(np.round(self.nodes), color="colored")        
     
     def genFig(self, doesShow=True):
         """
@@ -149,7 +150,7 @@ class FigureGenerater():
                 print("reached else block")
 
         plt.figure()
-        plt.imshow(SOM.getColoredNodes(nodes_tmp, color="colored") , cmap="gray", vmin=-1, vmax=1, interpolation="none")
+        plt.imshow(getColoredNodes(nodes_tmp, color="colored") , cmap="gray", vmin=-1, vmax=1, interpolation="none")
         plt.title("map of incorrect classifier")
         plt.savefig(self.dirStr_result +
                     "\\map of incorrect classifier" 
@@ -159,6 +160,75 @@ class FigureGenerater():
             plt.show()
             
         print(self.dirStr_result, "saved")
+        
+def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
+    Max = k + k**2
+    N = int(math.sqrt(nodes.shape[0])) #edge length of the map
+    coloredNodes = []
+    
+    #アドレスビットと行動で色分け
+    if color=="colored":
+        for cl in nodes:
+            addBits = None
+            ansBit = None
+            if cl[0] != -1:
+                addBitsArray = cl[:k]
+                #refBitsArray = cl[k:-1]
+                addBits = [str(int(i)) for i in addBitsArray]
+                addBits = "".join(addBits)
+                #ansBit = refBitsArray[int(addBits,2)] #正解行動
+                #todo
+                ansBit = cl[-1] #SOMが獲得した正解
+
+            if addBits=="00": #黒
+                if ansBit == 1:
+                    coloredNodes.append([0,0,0])
+                else:
+                    coloredNodes.append([128,128,128])    
+            elif addBits=="01": #R
+                if ansBit == 1:
+                    coloredNodes.append([128,0,0])
+                else:
+                    coloredNodes.append([255,0,0])
+            elif addBits=="10": #G
+                if ansBit == 1:
+                    coloredNodes.append([0,128,0])
+                else:
+                    coloredNodes.append([0,255,0])
+            elif addBits=="11": #B
+                if ansBit == 1:
+                    coloredNodes.append([0,0,128])
+                else:
+                    coloredNodes.append([0,0,255])
+            else: #W
+                coloredNodes.append([255,255,255])
+
+        coloredNodes = np.array(coloredNodes, dtype = np.uint8)
+        return coloredNodes.reshape(N, N, 3)
+    
+    elif color == "bits-scale":
+        for cl in nodes:        
+            coloredNodes.append(np.sum(cl[:-1])/Max)
+            
+        coloredNodes = np.array(coloredNodes)
+        return coloredNodes.reshape(N, N)
+
+    elif color == "bits2decimal-scale":
+        for cl in nodes:
+            cljoined = [str(int(i)) for i in cl]
+            cljoined = cljoined[:k+k**2] #act bitを除外
+            cljoined = "".join(cljoined)
+            clIntScale = int(cljoined,2) #2進数の2
+            coloredNodes.append(clIntScale)
+            #coloredNodes.append(int("".join([str(int(i)) for i in cl]))) #一行で書けばこう
+            
+        #coloredNodes = np.array(coloredNodes, dtype = np.uint8)
+        coloredNodes = np.array(coloredNodes)
+        return coloredNodes.reshape(N, N)
+    else:
+        raise ValueError("colorに渡す引数が間違ってるよ")
+
+    raise ValueError("colorに渡す引数が間違ってるよ")
         
 if __name__ == "__main__":
     #FigureGenerater(default = seed10).genFig()

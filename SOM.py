@@ -146,8 +146,7 @@ class SOM():
         # d is distance from BMU
         s = self._neighbourhood(t)
         return np.exp(-d**2/(2*s**2))
-
-            
+    
 def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = False, includeRewards = False):
     #seed setting
     if seed==None:
@@ -204,77 +203,6 @@ def getAnsNodes(nodes): #nodes.shape must be [N*N, bits]
     #return ansNodes.reshape(conf.N, conf.N)
     return np.array(list(map(getAns, nodes))) #mapで高速化できるか?
     #return np.array([getAns(cl) for cl in nodes])
-
-#todo: fgにお引越し
-def getColoredNodes(nodes, k=2, color="gray"): #nodes.shape must be [N*N, bits]
-    Max = k + k**2
-    N = int(math.sqrt(nodes.shape[0])) #edge length of the map
-    coloredNodes = []
-    
-    #アドレスビットと行動で色分け
-    if color=="colored":
-        for cl in nodes:
-            addBits = None
-            ansBit = None
-            if cl[0] != -1:
-                addBitsArray = cl[:k]
-                #refBitsArray = cl[k:-1]
-                addBits = [str(int(i)) for i in addBitsArray]
-                addBits = "".join(addBits)
-                #ansBit = refBitsArray[int(addBits,2)] #正解行動
-                #todo
-                ansBit = cl[-1] #SOMが獲得した正解
-
-            if addBits=="00": #黒
-                if ansBit == 1:
-                    coloredNodes.append([0,0,0])
-                else:
-                    coloredNodes.append([128,128,128])    
-            elif addBits=="01": #R
-                if ansBit == 1:
-                    coloredNodes.append([128,0,0])
-                else:
-                    coloredNodes.append([255,0,0])
-            elif addBits=="10": #G
-                if ansBit == 1:
-                    coloredNodes.append([0,128,0])
-                else:
-                    coloredNodes.append([0,255,0])
-            elif addBits=="11": #B
-                if ansBit == 1:
-                    coloredNodes.append([0,0,128])
-                else:
-                    coloredNodes.append([0,0,255])
-            else: #W
-                coloredNodes.append([255,255,255])
-
-        coloredNodes = np.array(coloredNodes, dtype = np.uint8)
-        return coloredNodes.reshape(N, N, 3)
-    
-    elif color == "bits-scale":
-        for cl in nodes:        
-            coloredNodes.append(np.sum(cl[:-1])/Max)
-            
-        coloredNodes = np.array(coloredNodes)
-        return coloredNodes.reshape(N, N)
-
-    elif color == "bits2decimal-scale":
-        for cl in nodes:
-            cljoined = [str(int(i)) for i in cl]
-            cljoined = cljoined[:k+k**2] #act bitを除外
-            cljoined = "".join(cljoined)
-            clIntScale = int(cljoined,2) #2進数の2
-            coloredNodes.append(clIntScale)
-            #coloredNodes.append(int("".join([str(int(i)) for i in cl]))) #一行で書けばこう
-            
-        #coloredNodes = np.array(coloredNodes, dtype = np.uint8)
-        coloredNodes = np.array(coloredNodes)
-        return coloredNodes.reshape(N, N)
-    else:
-        raise ValueError("colorに渡す引数が間違ってるよ")
-
-    raise ValueError("colorに渡す引数が間違ってるよ")
-
 
 class Main():
     def __init__(self, upd_bit=conf.ADBIT00):

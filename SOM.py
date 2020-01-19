@@ -45,9 +45,8 @@ class SOM():
         
         #格子点の生成
         x, y = np.meshgrid(range(self.N), range(self.N))
-        #座標の配列に変換
-        self.c = np.hstack((y
-                            .flatten()[:, np.newaxis],x.flatten()[:, np.newaxis]))
+        #二次元座標の一次元配列
+        self.c = np.hstack((y.flatten()[:, np.newaxis],x.flatten()[:, np.newaxis]))
         #初期マップの生成 caution:11月11日まで行動もランダムに与えていた！
         self.nodes = np.round(np.random.rand(self.N*self.N, self.teachers.shape[1]))
         
@@ -57,7 +56,7 @@ class SOM():
             
         self.ininodes = np.copy(self.nodes)
         
-        self.unique_dic_dic = {}
+        self.unique_dic_each_itr = {}
             
         #得点の付与
         #for cl in self.nodes:
@@ -71,15 +70,19 @@ class SOM():
 
         #hack
         for i, teacher in enumerate(tqdm(self.teachers, position=0, desc="te:"+str(conf.seed_teacher)+" tr"+str(conf.seed_train))):
-            bmu = self._best_matching_unit(teacher)
+            mu = self._best_matching_unit(teacher, all_index=True)
+            bmu = np.unravel_index(mu[0], (self.N, self.N))
             d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuのmap上での距離
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
             
             #ユニークルールセット
             if i%1000 == 0:
-                unique_dic_ = a.unique_dic(np.round(self.nodes))
-                self.unique_dic_dic[i] = unique_dic_
+                unique_dic_dic = a.unique_dic_dic(np.round(self.nodes))
+                self.unique_dic_each_itr[i] = unique_dic_dic
+            
+            #BMUが複数現れたら代表以外のものを突然変異
+            self.mutate(mu[1:])
             
             #teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
             #todo:                                                                                            
@@ -95,42 +98,27 @@ class SOM():
 
         print("training has finished")
         return self.nodes
-
-    def mapping(self, mappingDataList, isRounded=False):
-        tmpNodes = self.nodes
         
-        if isRounded == True:
-            self.nodes = np.round(self.nodes)
-        
-        #todo
-        mapped = np.full((self.N, self.N, self.teachers.shape[1]), -1)
-        for i, cl in enumerate(mappingDataList):
-            idx = self._best_matching_unit(cl, allIdx=True)
-            mapped[idx] = cl
-            
-        self.nodes = tmpNodes
-        
-        return mapped.reshape(self.N*self.N, self.teachers.shape[1])
-        
-    def _best_matching_unit(self, teacher, allIdx=False):
+    def _best_matching_unit(self, teacher, all_index=False):
         if self.head == None:
-            norms = np.linalg.norm(self.nodes[:, :self.head] - teacher[:self.head], axis=1)
+            norms = np.linalg.norm(self.nodes - teacher, axis=1)
         else: #self.head != None
             #todo
-            idx = list(range(self.head)) + [-1]
+            #idx = list(range(self.head)) + [-1]
+            idx = self.upd_bit + [-1]
             nodes = self.nodes[:,idx]
             teacher = teacher[idx]
             #ここで1ビットだけ1000倍のオーダーだったらノルムにどう響く?
             norms = np.linalg.norm(nodes - teacher, axis=1)
-
-        if allIdx == False:
-            #最初に見つかったインデックスを一つだけ返す
-            bmu = np.argmin(norms) #normsを1次元にreshapeしたときのインデックス
-        else:
+        
+        if all_index:
             #全てのインデックスを返す
-            bmu = np.where(norms == norms.min())
+            return np.where(norms == norms.min())[0]
+        else:
+            #最初に見つかったインデックスを一つだけ返す
+            return np.argmin(norms) #normsを1次元にreshapeしたときのインデックス
             
-        return np.unravel_index(bmu,(self.N, self.N)) #N*N行列のargmin
+        #return np.unravel_index(bmu,(self.N, self.N)) #N*N行列のargmin
 
     def _neighbourhood(self, t):#neighbourhood radious
         halflife = float(self.n_teacher/4) #for testing
@@ -146,6 +134,15 @@ class SOM():
         # d is distance from BMU
         s = self._neighbourhood(t)
         return np.exp(-d**2/(2*s**2))
+    
+    def mutate(self, mu):
+        def _mutate(node):
+            #node[2:-1] = np.random.permutation(node[2:-1])
+            node[2:-1] = np.random.rand(4)
+            return node
+        
+        for idx in mu:
+            self.nodes[idx] = _mutate(self.nodes[idx])
     
 def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = False, includeRewards = False):
     #seed setting
@@ -220,10 +217,10 @@ class Main():
         with open(conf.dirStr_result() + "\\" + "ininodes.bin", "wb") as ininodes:
             pickle.dump(self.som.ininodes, ininodes)
            
-        with open(conf.dirStr_result() + "\\" + "unique_dic_dic.bin", "wb") as dic:
-            pickle.dump(self.som.unique_dic_dic, dic)
+        with open(conf.dirStr_result() + "\\" + "unique_dic_each_itr.bin", "wb") as dic:
+            pickle.dump(self.som.unique_dic_each_itr, dic)
             
-        a.save_unique_cls_dic_dic_as_txt(self.som.unique_dic_dic, conf.dirStr_result())
+        a.save_unique_cls_dic_dic_as_txt(self.som.unique_dic_each_itr, conf.dirStr_result())
                     
         
 
@@ -232,4 +229,6 @@ class Main():
         #   nodes = pickle.load(nodes)        
 
 if __name__ == "__main__":
-    pass
+    main = Main()
+    #main.main()
+    #fg.FigureGenerater(dirStr_result = SOM.conf.dirStr_result()).genFig(doesShow=False)

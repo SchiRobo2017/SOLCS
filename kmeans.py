@@ -28,18 +28,24 @@ clusters = kmeans_model.labels_
 #for cluster, cl, coord in zip(clusters, classifiers, coordinates):
 #    print("class:", cluster, cl, "coord:", coord)
 
-fig = plt.figure()
+fig = plt.figure(figsize=(8,8))
 
 ax = fig.add_subplot(1,1,1)
 
-ax.scatter(xy[0], xy[1], c=clusters, marker="s")
+ax.scatter(xy[1], -xy[0], c=clusters, marker="s")
+
+plt.grid(True)
+#plt.xlim(-1, N)
+#plt.ylim(N, -1)
 
 ax.set_title('clusters in SOM')
 ax.set_xlabel('x')
 ax.set_ylabel('y')
 
+plt.savefig(test.path + "/clusters_in_som.png")
+
 tmp = list(zip(clusters, classifiers, coordinates))
 tmp.sort(key=lambda x : x[0])
 clustered_cls = pd.DataFrame(tmp, columns=["cluster", "classifier", "coordinate"])
 clustered_cls.index+=1
-clustered_cls.to_csv("clustered_cls.csv", sep="\t")
+clustered_cls.to_csv(test.path + "/clustered_cls.csv", sep="\t")

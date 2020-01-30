@@ -76,22 +76,7 @@ class FigureGenerater():
         plt.title("map after learning coloerd by address and act")
         plt.savefig(self.dirStr_result +
                     "\\map after learning coloerd by address and act" 
-                    + dt_now)
-        
-        """        
-        #実数ノードに全入力を曝露したデータ
-        nodes_mapped_new_input = main.som.mapping(mappingDataSequencial)
-        
-        nodes_mapped_new_input_colored = getColoredNodes(nodes_mapped_new_input, color="colored")
-    
-        plt.figure()
-        plt.imshow(nodes_mapped_new_input_colored, cmap="gray", vmin=0, vmax=255, interpolation="none")
-        plt.title("map of new classifier input")
-        plt.savefig(dirStr_result +
-                    "\\map of new classifier input" 
-                    + dt_now)
-        """   
-   
+                    + dt_now)   
   
         #正解 -> 0
         #誤り:正解が1で獲得が0　-> 1

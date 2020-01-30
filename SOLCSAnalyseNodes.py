@@ -139,7 +139,7 @@ def print_unique_dic_each_itr(unique_dic_each_itr, f=None):
             printClsGroupby(each_color_dic, f)
             
 def save_unique_cls_dic_dic_as_txt(unique_dic_each_itr, dir_result):
-    name_dic = "unipue_dic_dic.txt"
+    name_dic = "unique_dic_dic.txt"
     dir_result = dir_result + "\\" +  name_dic
     
     with open(dir_result, "w") as f:    

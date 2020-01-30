@@ -5,10 +5,11 @@ Created on Wed Jul 24 15:36:50 2019
 @author: Nakata Koya
 """
 
-import numpy as np
 import os
 import math
 import pickle
+import numpy as np
+import pandas as pd
 #import pprint
 import SOLCSConfig as conf
 import SOLCSFigureGenerator as fg
@@ -175,8 +176,9 @@ def generateMUXNodes(num_teachers, seed=None, k=2, P_sharp = 0, includeAns = Fal
         teachers.append(teacher)
     return teachers
 
+@jit
 def getAns(bitArray):
-    addbit = bitArray[:conf.k]
+    #adbit = bitArray[:conf.k]
     #refbit = bitArray[k:]
     #cal = ""
     #正解行動
@@ -188,11 +190,21 @@ def getAns(bitArray):
     #return ans
         
     #return refbit[int(cal,2)]
-    return bitArray[conf.k+int("".join(map(str, map(int, addbit))),2)]
+    #return bitArray[conf.k+int("".join(map(str, map(int, addbit))),2)]
     #return bitArray[conf.k+int("".join([str(int(x)) for x in addbit]),2)]
+    
+    """
+    """
+    adbit = bitArray[:conf.k]
+    cal = 0
+    for i in range(len(adbit)):
+        cal+=adbit[::-1][i]*2**i
+    #print(type(cal))
+    return bitArray[conf.k:][int(cal)]
+    
 
 #act含む/含まない両方対応
-#@njit
+@njit
 def getAnsNodes(nodes): #nodes.shape must be [N*N, bits]
     #ansNodes = []
     #for cl in nodes:
@@ -201,7 +213,13 @@ def getAnsNodes(nodes): #nodes.shape must be [N*N, bits]
     #ansNodes = np.array(ansNodes)
     #return ansNodes.reshape(conf.N, conf.N)
     #return np.array(list(map(getAns, nodes)))
-    return np.array([getAns(cl) for cl in nodes])
+    #return np.array([getAns(cl) for cl in nodes])
+    
+    ret_nodes = np.zeros(conf.N*conf.N)
+    for i in range(ret_nodes.shape[0]):
+        ret_nodes[i] = getAns(nodes[i])
+        
+    return ret_nodes
 
 class Main():
     def __init__(self, upd_bit=conf.ADBIT00):
@@ -223,6 +241,7 @@ class Main():
             pickle.dump(self.som.unique_dic_each_itr, dic)
             
         a.save_unique_cls_dic_dic_as_txt(self.som.unique_dic_each_itr, conf.dirStr_result())
+        #pd.DataFrame(self.som.unique_dic_each_itr)
                     
         
 

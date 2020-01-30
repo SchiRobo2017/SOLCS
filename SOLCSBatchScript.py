@@ -5,6 +5,8 @@ Created on Fri Oct 25 16:00:02 2019
 @author: Nakata Koya
 """
 
+#N=100でabout 40min ~ 1h10min/10000itr
+
 import SOM
 import SOLCSFigureGenerator as fg
 import itertools
@@ -22,7 +24,7 @@ for te, tr in seeds:
     for adbit in SOM.conf.ADBIT_IDX.values():
         print("update_index:", str(adbit))
         SOM.conf.dirNameAdditionalStr = "_" + str(adbit) + "_N" + str(SOM.conf.N)
-        SOM.conf.dirNameAdditionalStr += "_ord_None_test"
+        SOM.conf.dirNameAdditionalStr += "_in_norm_ord1"
         main = SOM.Main(upd_bit=adbit)
         main.main()
         fg.FigureGenerater(dirStr_result = SOM.conf.dirStr_result()).genFig(doesShow=False)

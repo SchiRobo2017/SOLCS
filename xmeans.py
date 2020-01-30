@@ -15,33 +15,8 @@ import math
 
 N = int(math.sqrt(test.nodes.shape[0]))
 
-arr_1 = np.random.normal(scale=1.0, size=(100, 2))
-arr_2 = np.random.normal(scale=2.0, size=(300, 2))
-arr_3 = np.random.normal(scale=1.5, size=(200, 2))
-arr_4 = np.random.normal(scale=1.2, size=(50, 2))
-arr_2[:, 0] += 10
-arr_3[:, 0] += 4
-arr_3[:, 1] += -7
-arr_4[:, 0] += 11
-arr_4[:, 1] += -9
-X = np.concatenate([
-    arr_1,
-    arr_2,
-    arr_3,
-    arr_4,
-])
-
 data = list(test.dict_map_outliner_excluded.values())
 labels = list(test.dict_map_outliner_excluded.keys())
-#df = pd.DataFrame(data)
-#Z = linkage(df,method="ward",metric="euclidean")
-
-#r = dendrogram(Z, p=10, truncate_mode="level", labels=labels)
-
-#t = 0.7*max(Z[:,2])
-#c = fcluster(Z, t=8, criterion="maxclust")
-
-#x, y = np.meshgrid(range(N), range(N))
 
 xy = np.unravel_index(labels, (N, N))
 

@@ -18,15 +18,16 @@ from tqdm import tqdm
 #from itertools import groupby
 from operator import itemgetter
 #from numba.decorators import jit
+from numba import jit, njit
 
-ADBIT00 = [0,1,2]
-ADBIT01 = [0,1,3]
-ADBIT10 = [0,1,4]
-ADBIT11 = [0,1,5]
-ADBIT_IDX = {"BLACK":[0,1,2], "RED":[0,1,3], "GREEN":[0,1,4], "BLUE":[0,1,5]}
+#ADBIT00 = [0,1,2]
+#ADBIT01 = [0,1,3]
+#ADBIT10 = [0,1,4]
+#ADBIT11 = [0,1,5]
+#ADBIT_IDX = {"BLACK":[0,1,2], "RED":[0,1,3], "GREEN":[0,1,4], "BLUE":[0,1,5]}
 
-ADBIT_VALS = [[0,0,0], [0,0,1], [0,1,0], [0,1,1], [1,0,0], [1,0,1], [1,1,0], [1,1,1]]
-ACTIONS = [0,1]
+#ADBIT_VALS = [[0,0,0], [0,0,1], [0,1,0], [0,1,1], [1,0,0], [1,0,1], [1,1,0], [1,1,1]]
+#ACTIONS = [0,1]
 
 class SOM():
     def __init__(self, teachers, N, upd_bit = conf.ADBIT00, head=None, seed=None, doesErrorCorrect = False):
@@ -72,7 +73,7 @@ class SOM():
         for i, teacher in enumerate(tqdm(self.teachers, position=0, desc="te:"+str(conf.seed_teacher)+" tr"+str(conf.seed_train))):
             mu = self._best_matching_unit(teacher, all_index=True)
             bmu = np.unravel_index(mu[0], (self.N, self.N))
-            d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuのmap上での距離
+            d = np.linalg.norm(self.c - bmu, axis=1, ord=1) #cとbmuのmap上での距離
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
             
@@ -191,6 +192,7 @@ def getAns(bitArray):
     #return bitArray[conf.k+int("".join([str(int(x)) for x in addbit]),2)]
 
 #act含む/含まない両方対応
+#@njit
 def getAnsNodes(nodes): #nodes.shape must be [N*N, bits]
     #ansNodes = []
     #for cl in nodes:
@@ -198,8 +200,8 @@ def getAnsNodes(nodes): #nodes.shape must be [N*N, bits]
             
     #ansNodes = np.array(ansNodes)
     #return ansNodes.reshape(conf.N, conf.N)
-    return np.array(list(map(getAns, nodes))) #mapで高速化できるか?
-    #return np.array([getAns(cl) for cl in nodes])
+    #return np.array(list(map(getAns, nodes)))
+    return np.array([getAns(cl) for cl in nodes])
 
 class Main():
     def __init__(self, upd_bit=conf.ADBIT00):

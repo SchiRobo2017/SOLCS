@@ -17,6 +17,8 @@ path = "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_[0, 
 
 path = "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_[0, 1, 2]_N24_L1_norm_test_20200120034552"
 
+path = "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_[0, 1, 2]_N24_L1_norm_test_20200120034552"
+
 fg_ = fg.FigureGenerater(path)
 
 with open(path+"/nodes.bin", "rb") as nodes:

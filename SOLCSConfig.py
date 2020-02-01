@@ -11,7 +11,7 @@ dirNameAdditionalStr = ""
 #caution: 中間発表の結果はteacher=10, trainはSOM初期化時にNone渡し
 seed_teacher = 10 #入力データseed
 seed_train = None #マップ初期化シード
-N = 100 #default=100
+N = 24 #default=100
 head = None
 k = 2
 includeAns = True
@@ -21,7 +21,7 @@ includeRewards = False
 bits = k + 2**k
 if includeAns:
     bits+=1
-num_teachers = 10001 #default=10000   
+num_teachers = 501 #default=10000   
 #dirStr_result = "exp_data\\seed" + str(seed_teacher) #seedが途中で変わったときに対応できない
 
 #SOMの更新部に関する定義

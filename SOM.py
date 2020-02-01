@@ -72,9 +72,10 @@ class SOM():
 
         #hack
         for i, teacher in enumerate(tqdm(self.teachers, position=0, desc="te:"+str(conf.seed_teacher)+" tr"+str(conf.seed_train))):
-            mu = self._best_matching_unit(teacher, all_index=True)
-            bmu = np.unravel_index(mu[0], (self.N, self.N))
+            bmus = self._best_matching_unit(teacher, all_index=True)
+            bmu = np.unravel_index(bmus[0], (self.N, self.N))
             d = np.linalg.norm(self.c - bmu, axis=1, ord=1) #cとbmuのmap上での距離
+            #d = np.linalg.norm(self.c - bmu, axis=1) #cとbmuのmap上での距離
             L = self._learning_ratio(i)
             S = self._learning_radius(i, d)
             
@@ -84,14 +85,12 @@ class SOM():
                 self.unique_dic_each_itr[i] = unique_dic_dic
             
             #BMUが複数現れたら代表以外のものを突然変異
-            self.mutate(mu[1:])
+            self.mutate(bmus[1:])
             
-            #teacher[self.head:-2] = 0 #先頭3ビット＋行動だけ更新する場合
-            #todo:                                                                                            
-            self.nodes[:,self.upd_bit] +=  L * S[:, np.newaxis] * (teacher[self.upd_bit] - self.nodes[:,self.upd_bit])
+            #self.nodes[:,self.upd_bit] +=  L * S[:, np.newaxis] * (teacher[self.upd_bit] - self.nodes[:,self.upd_bit])
 
             #全ビット更新
-            #self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
+            self.nodes +=  L * S[:, np.newaxis] * (teacher - self.nodes)
             
             #誤り訂正　正解行動を付与
             #todo bottle neck

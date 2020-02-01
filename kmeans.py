@@ -21,7 +21,7 @@ indexes = list(test.dict_map_outliner_excluded.keys())
 xy = np.unravel_index(indexes, (N, N))
 coordinates = list(zip(xy[0], xy[1]))
 
-kmeans_model = KMeans(n_clusters=8).fit(coordinates)
+kmeans_model = KMeans(n_clusters=16).fit(coordinates)
 
 clusters = kmeans_model.labels_
 
@@ -42,10 +42,10 @@ ax.set_title('clusters in SOM')
 ax.set_xlabel('x')
 ax.set_ylabel('y')
 
-plt.savefig(test.path + "/clusters_in_som.png")
+plt.savefig(test.path + "/clusters_in_som_k16.png")
 
 tmp = list(zip(clusters, classifiers, coordinates))
 tmp.sort(key=lambda x : x[0])
 clustered_cls = pd.DataFrame(tmp, columns=["cluster", "classifier", "coordinate"])
 clustered_cls.index+=1
-clustered_cls.to_csv(test.path + "/clustered_cls.csv", sep="\t")
+clustered_cls.to_csv(test.path + "/clustered_cls_k16.csv", sep="\t")

@@ -20,9 +20,18 @@ path = ["C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_[0,
 
 #path = path[3]
 
-path = "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_N24_all_bits_upd_20200130123328"
+#path = "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_N24_all_bits_upd_20200130123328"
 
 #path = "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_N24_allbits_update_1001_20200131174016"
+
+path = ["C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_[0, 1, 5]_N24/teacher1_train10_[0, 1, 5]_N24_20200130183943",
+        "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_[0, 1, 5]_N24/teacher1_train10_[0, 1, 4]_N24_20200130183943",
+        "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_[0, 1, 5]_N24/teacher1_train10_[0, 1, 3]_N24_20200130183943",
+        "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_[0, 1, 5]_N24/teacher1_train10_[0, 1, 2]_N24_20200130183943"]
+
+path = ["C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_N24/teacher1_train10_[0, 1, 2]_N24_20200130183943", "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_N24/teacher1_train10_[0, 1, 3]_N24_20200130183943", "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_N24/teacher1_train10_[0, 1, 4]_N24_20200130183943", "C:/Users/Nakata Koya/python/XCSandSOM_git/exp_data/teacher1_train10_N24/teacher1_train10_[0, 1, 5]_N24_20200130183943"]
+
+path = path[0]
 
 fg_ = fg.FigureGenerater(path)
 
